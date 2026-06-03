@@ -70,7 +70,7 @@ echo "================================================================"
 # ── 1. Memory session state ──
 echo ""
 echo "=== MEMORY SESSION ==="
-MEMORY_SH=".opencode/tools/memory.sh"
+MEMORY_SH="$SCRIPT_DIR/memory.sh"
 if [[ -x "$MEMORY_SH" ]]; then
   if ! "$MEMORY_SH" session show 2>&1; then
     echo "(memory.sh session show failed)"

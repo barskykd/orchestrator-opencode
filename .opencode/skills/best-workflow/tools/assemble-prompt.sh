@@ -35,9 +35,8 @@ set -euo pipefail
 
 # ── Locate repo assets (templates, agents) via SCRIPT_DIR ──
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
-AGENTS_DIR="$REPO_ROOT/.opencode/agents"
-TEMPLATES_DIR="$REPO_ROOT/.opencode/templates"
+AGENTS_DIR="$SCRIPT_DIR/../agents"
+TEMPLATES_DIR="$SCRIPT_DIR/../templates"
 
 # ── Parse arguments ──
 AGENT="" TYPE="" NAME="" TASK_FILE="" OUTPUT=""
@@ -120,6 +119,8 @@ mkdir -p "$OUT_DIR"
 # we use a safe character class already validated.
 {
   printf 'You are an AI agent named %s.\n\n' "$NAME"
+  printf 'Agent folder is: %s \n\n' "$SCRIPT_DIR/../agents"
+  printf 'Scripts folder is: %s \n\n' "$SCRIPT_DIR/"
   printf 'Before claiming something is missing or broken — grep for existing guards, handlers, or implementations first.\n\n'
   cat "$AGENT_MD"
   printf '\n\n--- TASK ASSIGNMENT ---\n\n'

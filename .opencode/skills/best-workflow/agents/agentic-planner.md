@@ -26,7 +26,7 @@ Before writing a single stage, you MUST understand the project deeply. Unlike th
 
 1. **Explore the full codebase structure** — glob for all source files, count lines, map directories
 2. **Read key source files** — at minimum: main entry points, build system, test infrastructure, README
-3. **Read the agent INDEX completely** — `.opencode/agents/INDEX.md` — know EVERY available agent and its specialization
+3. **Read the agent INDEX completely** — `<agents-folder>/agents/INDEX.md` — know EVERY available agent and its specialization
 4. **Read the mandatory skeleton and planning rules** — AGENTS.md sections: Planning, Verification, Rules
 5. **Examine dependencies** — package files, lock files, external libraries
 6. **Check test infrastructure** — test runner, coverage, test data

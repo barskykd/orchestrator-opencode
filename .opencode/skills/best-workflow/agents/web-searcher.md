@@ -31,12 +31,12 @@ You are a web research specialist. You find, evaluate, and synthesize informatio
 
 ```bash
 # Run each query as a separate call, sequentially (not in parallel)
-./.opencode/tools/web_search.sh "query 1"
-./.opencode/tools/web_search.sh "query 2"
-./.opencode/tools/web_search.sh "query 3"
+<script-folder>/web_search.sh "query 1"
+<script-folder>/web_search.sh "query 2"
+<script-folder>/web_search.sh "query 3"
 
 # Windows
-.opencode/tools/web_search.bat "query"
+<script-folder>/web_search.bat "query"
 ```
 
 ## Query Type Selection

@@ -1,8 +1,13 @@
+---
+name: best-workflow
+description: Use only then explicitly asked.
+---
+
 ## Agents
 
-110+ specialized AI agents for OpenCode. Agents are stored in `.opencode/agents/` as Markdown files with YAML frontmatter.
+110+ specialized AI agents for OpenCode. Agents are stored in `<skill-folder>/agents/` as Markdown files with YAML frontmatter.
 
-**Discovery:** Consult `.opencode/agents/INDEX.md` for the full categorized agent directory (110+ agents grouped by domain). Pick the MOST specialized agent — domain-specific checklists and anti-patterns only work when the agent matches the domain.
+**Discovery:** Consult `<skill-folder>/agents/INDEX.md` for the full categorized agent directory (110+ agents grouped by domain). Pick the MOST specialized agent — domain-specific checklists and anti-patterns only work when the agent matches the domain.
 
 ### Agent Categories
 
@@ -43,7 +48,7 @@ Two-tier: **Knowledge** (`knowledge.md`) permanent, **Session** (`session.md`) t
 ### Knowledge
 
 ```bash
-./.opencode/tools/memory.sh add <category> "<content>" [--tags a,b,c]
+<skill-folder>/tools/memory.sh add <category> "<content>" [--tags a,b,c]
 ```
 
 | Category | Save When |
@@ -72,12 +77,12 @@ Tracks current task. Persists until cleared.
 **Categories:** `plan`, `todo`, `progress`, `note`, `context`, `decision`, `blocker`. **Statuses:** `pending` → `in_progress` → `completed` | `blocked`.
 
 ```bash
-./.opencode/tools/memory.sh session add todo "Task" --status pending
-./.opencode/tools/memory.sh session show                    # View current
-./.opencode/tools/memory.sh session update <id> --status completed
-./.opencode/tools/memory.sh session delete <id>
-./.opencode/tools/memory.sh session clear                   # Current only
-./.opencode/tools/memory.sh session clear --all             # ALL sessions
+<skill-folder>/tools/memory.sh session add todo "Task" --status pending
+<skill-folder>/tools/memory.sh session show                    # View current
+<skill-folder>/tools/memory.sh session update <id> --status completed
+<skill-folder>/tools/memory.sh session delete <id>
+<skill-folder>/tools/memory.sh session clear                   # Current only
+<skill-folder>/tools/memory.sh session clear --all             # ALL sessions
 ```
 
 ### Checkpoints
@@ -89,9 +94,9 @@ Checkpoints are session-context entries written after every workflow step. Full 
 Multiple CLI instances work without conflicts. Resolution: `-S` flag > `MEMORY_SESSION` env > `.opencode/current_session` file > `"default"`.
 
 ```bash
-./.opencode/tools/memory.sh session use feature-auth        # Switch session
-./.opencode/tools/memory.sh -S other session add todo "..." # One-off
-./.opencode/tools/memory.sh session sessions                # List all
+<skill-folder>/tools/memory.sh session use feature-auth        # Switch session
+<skill-folder>/tools/memory.sh -S other session add todo "..." # One-off
+<skill-folder>/tools/memory.sh session sessions                # List all
 ```
 
 ---
@@ -100,7 +105,7 @@ Multiple CLI instances work without conflicts. Resolution: `-S` flag > `MEMORY_S
 
 For any internet search:
 
-1. **ALL internet research must go through `web_search.sh`** — no exceptions. This means: no built-in websearch tool, no WebFetch tool, no `curl` against APIs, no manual GitHub API calls, no `wget`, nothing else. Every time you need information from the internet, use `./.opencode/tools/web_search.sh "query"` (or `.opencode/tools/web_search.bat` on Windows)
+1. **ALL internet research must go through `web_search.sh`** — no exceptions. This means: no built-in websearch tool, no WebFetch tool, no `curl` against APIs, no manual GitHub API calls, no `wget`, nothing else. Every time you need information from the internet, use `<skill-folder>/tools/web_search.sh "query"` (or `<skill-folder>/tools/web_search.bat` on Windows)
    - **One query per call** — run each query as a separate `web_search.sh` invocation. Never combine multiple queries into a single call. Run calls **sequentially** (one after another, not in parallel) to avoid hitting API rate limits
    - **Always use default options** — never add `-s`, `--max-results`, or any result-limiting flags. Let the tool use its built-in defaults
    - **Scientific queries: add `--sci`** for CS, physics, math, engineering (arXiv + OpenAlex)
@@ -121,7 +126,7 @@ The ONLY agent-delegation pipeline is `spawn-glm.sh` → `assemble-prompt.sh` �
 
 ### Agent Loading Rules
 
-Agents folder: `.opencode/agents/`. Use agents for all non-trivial subtasks — code writing, analysis, design, debugging, testing, documentation.
+Agents folder: `<skill-folder>/agents/`. Use agents for all non-trivial subtasks — code writing, analysis, design, debugging, testing, documentation.
 
 **Rules:**
 - Before any subtask: select the best agent and read its `.md` file (always fresh re-read)
@@ -129,16 +134,16 @@ Agents folder: `.opencode/agents/`. Use agents for all non-trivial subtasks — 
 - All agent delegation goes through `spawn-glm.sh` — see Rules → Task tool prohibition
 - Agent instructions are TEMPORARY — apply to current subtask only, discard after
 
-**Discovery:** Glob `.opencode/agents/*.md` to list, Grep by keyword. Prefer specialized over general agents.
+**Discovery:** Glob `<skill-folder>/agents/*.md` to list, Grep by keyword. Prefer specialized over general agents.
 
 ### Request Workflow
 
-1. **Memory:** `./.opencode/tools/memory.sh context "<keywords>"` — extract from entities, technologies, services, error types. MANDATORY for non-trivial tasks
-2. **Continuation:** `./.opencode/tools/memory.sh search "GLM-CONTINUATION"` — resume if exists
+1. **Memory:** `<skill-folder>/tools/memory.sh context "<keywords>"` — extract from entities, technologies, services, error types. MANDATORY for non-trivial tasks
+2. **Continuation:** `<skill-folder>/tools/memory.sh search "GLM-CONTINUATION"` — resume if exists
 3. **Evaluate:** If any OpenCode Workflow delegate trigger matches → enter orchestration flow (skip 5-6)
 4. **Re-read Verification and Iterative Convergence sections:** Before planning ANY stages, re-read the Verification section AND Iterative Convergence section in full. Verification defines the mandatory adversarial pipeline (extraction → falsification → merge) that MUST appear after every code-referencing stage. Iterative Convergence defines the mandatory repeat loop (convergence when no new findings) for all discovery stages. Skipping these re-reads is the #1 cause of plans missing verification and convergence. MANDATORY.
 5. **Planning phase (2 batches, 2 agents):**
-   a. **Initial planner:** Copy `.opencode/templates/planner-task-template.txt`, fill in the project path, assemble with `assemble-prompt.sh -a agentic-planner -t research -n s0-planner`, and spawn. Researches the project and produces a plan draft to `tmp/glm-plan.md`.
+   a. **Initial planner:** Copy `<skill-folder>/templates/planner-task-template.txt`, fill in the project path, assemble with `assemble-prompt.sh -a agentic-planner -t research -n s0-planner`, and spawn. Researches the project and produces a plan draft to `tmp/glm-plan.md`.
    b. **Plan reviewer:** Create a review task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering skeleton adherence, agent selection, adversarial verification placement, convergence loops, and dependency analysis. Assemble with `-a code-reviewer -t code -n s0-review-plan` (requires `WRITABLE FILES: tmp/glm-plan.md`). Reads the draft, identifies issues, applies fixes, and overwrites `tmp/glm-plan.md` with the final improved plan — this agent produces the finished plan, not just review notes.
 6. **Review final plan:** Read `tmp/glm-plan.md`, confirm it follows the mandatory skeleton with all stages, annotations, and convergence loops. If gaps remain, correct or re-spawn the review agent with adjusted instructions.
 7. **Decompose:** List subtasks from the plan, map each to best agent, report to user
@@ -183,7 +188,7 @@ The lead is an **autonomous orchestrator**, not a developer doing hands-on work.
 
 **Self-check rules (MANDATORY) — run before working on ANY subtask:**
 - Heavy Read/Grep usage for planning and verification is expected and allowed
-- If a specialized agent in `.opencode/agents/INDEX.md` matches the subtask domain → **SPAWN it.** Don't reproduce its work yourself
+- If a specialized agent in `<skill-folder>/agents/INDEX.md` matches the subtask domain → **SPAWN it.** Don't reproduce its work yourself
 - If the subtask requires writing code, running test suites, or deep analysis across many files → that's agent work. Delegate it via `spawn-glm.sh` (see Rules → Task tool prohibition for the absolute rule)
 
 **Verification vs implementation boundary:**
@@ -201,7 +206,7 @@ Max 3 agents running in parallel.
 
 **Spawn:**
 ```bash
-.opencode/tools/spawn-glm.sh -n NAME -f PROMPT_FILE
+<skill-folder>/tools/spawn-glm.sh -n NAME -f PROMPT_FILE
 ```
 Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME}-report.md`, log: `tmp/{NAME}-log.txt`. Also writes to `tmp/{NAME}-status.txt` (reliable on Windows — stdout can be lost when parallel `.cmd` processes launch).
 
@@ -218,7 +223,7 @@ Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME
 
 **Wait:**
 ```bash
-.opencode/tools/wait-glm.sh name1:$PID1 name2:$PID2 name3:$PID3
+<skill-folder>/tools/wait-glm.sh name1:$PID1 name2:$PID2 name3:$PID3
 ```
 Blocks until all finish (Bash timeout: 600000). Do NOT use bare `wait` or `sleep` + poll loops. Prefer `name:pid` format — enables progress monitoring (first at 30s, then every 60s) and STALLED detection (0-byte log after 2min). Bare PIDs still work but skip log monitoring. If Bash times out before agents finish, re-invoke with same arguments — this is normal for long-running agents.
 
@@ -300,7 +305,7 @@ Stages shown as (conditional) may be omitted if the condition is not met — sta
 
 **Delegation mapping (MANDATORY in every plan):** During planning you MUST answer:
 1. What subtasks exist? (list each one)
-2. Which agent handles each subtask? (map agent name to subtask — consult `.opencode/agents/INDEX.md`)
+2. Which agent handles each subtask? (map agent name to subtask — consult `<skill-folder>/agents/INDEX.md`)
 3. Where is adversarial verification in this plan? Confirm at least one adversarial verification stage exists for every discovery/review stage, or mark it explicitly as SKIPPED with justification. A plan without adversarial stages is incomplete.
 
 Answer these explicitly in your plan. Every subtask must have an assigned agent — no subtask goes to the lead.
@@ -327,7 +332,7 @@ CAUTION: Never use broad patterns like `tmp/*-report.md` or `tmp/*-log.txt` — 
 
 #### Agent Preparation
 
-Consult `.opencode/agents/INDEX.md` for the full agent directory (110+ agents grouped by domain). Pick the MOST specialized agent (see Agent Selection above) — a PostgreSQL task should use postgres-pro, not database-optimizer. The agent's domain checklists and anti-patterns are the primary value — they only work when the agent matches the domain.
+Consult `<skill-folder>/agents/INDEX.md` for the full agent directory (110+ agents grouped by domain). Pick the MOST specialized agent (see Agent Selection above) — a PostgreSQL task should use postgres-pro, not database-optimizer. The agent's domain checklists and anti-patterns are the primary value — they only work when the agent matches the domain.
 
 For each agent in the current stage:
 
@@ -335,7 +340,7 @@ For each agent in the current stage:
 2. Write the TASK ASSIGNMENT block (PROJECT, ENVIRONMENT if code, PRIOR CONTEXT if stage 2+, YOUR TASK, WRITABLE FILES) to `tmp/{name}-task.txt`. NOTE: Do NOT include the report file path in WRITABLE FILES — the script auto-injects `tmp/{NAME}-report.md` automatically.
 3. Assemble the full prompt:
    ```bash
-   .opencode/tools/assemble-prompt.sh -a AGENT -t TYPE -n NAME --task tmp/{name}-task.txt
+   <skill-folder>/tools/assemble-prompt.sh -a AGENT -t TYPE -n NAME --task tmp/{name}-task.txt
    ```
    Types: `review` (coordination-review + severity + quality-rules-review), `code` (coordination-code + quality-rules-code), `research` (coordination-review + quality-rules-review). The script reads the agent .md, selects templates, substitutes `{NAME}`, and writes `tmp/{name}-prompt.txt`. Output: `ASSEMBLED|name|path|bytes`
 4. **Validate prompt contains ALL:** full agent .md, TASK ASSIGNMENT with MUST ANSWER questions, quality rules, severity guide (review only), environment (code only), coordination, report format. The script handles all boilerplate automatically — you only own the task file. Missing ANY = do not spawn
@@ -428,7 +433,7 @@ You are a single agent working solo. Do all the work yourself — do not spawn s
 
 Before claiming something is missing or broken — grep for existing guards, handlers, or implementations first.
 
-{Full .opencode/agents/{agent}.md — see Prompts rule}
+{Full <skill-folder>/agents/{agent}.md — see Prompts rule}
 
 --- TASK ASSIGNMENT ---
 
@@ -444,11 +449,11 @@ YOUR TASK: {KEY FILES, CONTEXT, SCOPE, MUST ANSWER questions}
 
 WRITABLE FILES: {code agents only — list source files agent may edit. Review/research/audit agents: omit this section}
 
-{cat .opencode/templates/coordination-review.txt OR coordination-code.txt — replace {NAME}}
+{cat <skill-folder>/templates/coordination-review.txt OR coordination-code.txt — replace {NAME}}
 
-{cat .opencode/templates/severity-guide.txt — REVIEW/audit tasks only}
+{cat <skill-folder>/templates/severity-guide.txt — REVIEW/audit tasks only}
 
-{cat .opencode/templates/quality-rules-review.txt OR quality-rules-code.txt}
+{cat <skill-folder>/templates/quality-rules-review.txt OR quality-rules-code.txt}
 ```
 
 | Task Type | Coordination | Severity Guide | Quality Rules |
@@ -457,23 +462,23 @@ WRITABLE FILES: {code agents only — list source files agent may edit. Review/r
 | Code/refactor | coordination-code.txt | — | quality-rules-code.txt |
 | Research | coordination-review.txt | — | quality-rules-review.txt |
 
-Boilerplate templates live in `.opencode/templates/`. Lead only writes the unique parts (agent .md selection + TASK ASSIGNMENT). Templates are `cat`-ed into the prompt file verbatim.
+Boilerplate templates live in `<skill-folder>/templates/`. Lead only writes the unique parts (agent .md selection + TASK ASSIGNMENT). Templates are `cat`-ed into the prompt file verbatim.
 
 ### Checkpoints & Recovery
 
 **Save after every step — no exceptions.** One active checkpoint (delete previous first). Under 500 chars.
 
 ```bash
-./.opencode/tools/memory.sh session add context "CHECKPOINT: [task] | DONE: [steps] | NEXT: [remaining] | FILES: [key files] | BUILD/TEST: [commands]"
+<skill-folder>/tools/memory.sh session add context "CHECKPOINT: [task] | DONE: [steps] | NEXT: [remaining] | FILES: [key files] | BUILD/TEST: [commands]"
 ```
 
 **Compaction recovery — MANDATORY sequence (do ALL steps, no skipping):**
-1. Run `.opencode/tools/glm-recover.sh` — prints memory session, plan, continuation (if any), newest synthesis (iter or stage, by mtime), and latest checklist in one stream. Replaces steps 1, 3, 4 below with a single command
+1. Run `<skill-folder>/tools/glm-recover.sh` — prints memory session, plan, continuation (if any), newest synthesis (iter or stage, by mtime), and latest checklist in one stream. Replaces steps 1, 3, 4 below with a single command
 2. **Re-read AGENTS.md in full and STRICTLY follow its instructions** — ALWAYS, no exceptions, no partial reads. `glm-recover.sh` does NOT do this for you
 3. Only then resume work
 
 If `glm-recover.sh` is unavailable, fall back to the manual sequence:
-1. `./.opencode/tools/memory.sh session show` — restore session state
+1. `<skill-folder>/tools/memory.sh session show` — restore session state
 2. Read `tmp/glm-plan.md` — restore current plan
 3. Read the latest `tmp/sN-merge-report.md`, `tmp/stage-N-iter-K-synthesis.md`, or `tmp/stage-N-synthesis.md` — restore verification/iteration/stage state
 
@@ -494,10 +499,10 @@ For tasks exceeding a single session:
 
 1. Complete current stage fully
 2. Write `tmp/glm-continuation.md`: original task, plan, completed stages, next stage, decisions, modified files, blockers
-3. `./.opencode/tools/memory.sh add context "GLM-CONTINUATION: [summary]" --tags glm-opencode,continuation`
+3. `<skill-folder>/tools/memory.sh add context "GLM-CONTINUATION: [summary]" --tags glm-opencode,continuation`
 4. Tell user what's done and what continues
 
-**Pickup:** `./.opencode/tools/memory.sh search "GLM-CONTINUATION"` → read continuation file → read prior synthesis → continue next stage. On final stage, clean up continuation file and memory entry. Never re-do verified prior work.
+**Pickup:** `<skill-folder>/tools/memory.sh search "GLM-CONTINUATION"` → read continuation file → read prior synthesis → continue next stage. On final stage, clean up continuation file and memory entry. Never re-do verified prior work.
 
 ### Error Handling
 
@@ -521,13 +526,13 @@ For tasks exceeding a single session:
 
 **Task tool prohibition (MANDATORY — single most important rule):** Agent delegation in this project happens ONLY via `spawn-glm.sh`. The `Task` tool with its `subagent_type` parameter is FORBIDDEN — never call it, regardless of the use case (exploration, code review, implementation, research, anything).
 
-The Task tool's built-in `subagent_type` list happens to share names with our agent `.md` files in `.opencode/agents/` (`code-reviewer`, `ios-pro`, `swift-pro`, etc.) — these are TWO DIFFERENT THINGS. The Task tool ships a separate sub-agent runtime that bypasses our review pipeline, the `spawn-glm.sh` flow, verification, report formats, and quality rules. Our agent `.md` files are reached ONLY by passing `-a AGENT_NAME` to `assemble-prompt.sh` and then spawning via `spawn-glm.sh`.
+The Task tool's built-in `subagent_type` list happens to share names with our agent `.md` files in `<skill-folder>/agents/` (`code-reviewer`, `ios-pro`, `swift-pro`, etc.) — these are TWO DIFFERENT THINGS. The Task tool ships a separate sub-agent runtime that bypasses our review pipeline, the `spawn-glm.sh` flow, verification, report formats, and quality rules. Our agent `.md` files are reached ONLY by passing `-a AGENT_NAME` to `assemble-prompt.sh` and then spawning via `spawn-glm.sh`.
 
 If you catch yourself about to call `Task(subagent_type=...)` — stop, use `spawn-glm.sh` instead.
 
 **Agent count per stage (MANDATORY — no shortcuts):** Always use ALL available slots per stage. Spawn up to 3 agents filling all parallelizable work. In doubt, prefer more agents over fewer — broader parallel coverage produces higher quality results.
 
-**Prompts:** Include the FULL agent `.md` file — agents are optimized and every section earns its place. Do NOT trim or skip sections. Boilerplate (quality rules, severity guide, coordination, report format) comes from `.opencode/templates/` and is appended after the agent .md. Agents don't load AGENTS.md — all context must be in prompt.
+**Prompts:** Include the FULL agent `.md` file — agents are optimized and every section earns its place. Do NOT trim or skip sections. Boilerplate (quality rules, severity guide, coordination, report format) comes from `<skill-folder>/templates/` and is appended after the agent .md. Agents don't load AGENTS.md — all context must be in prompt.
 
 **Verification:** Every finding labeled. Every label backed by Read. 100% complete before proceeding. ALL verified actionable findings fixed via fix-agent — the lead does not fix findings directly.
 
