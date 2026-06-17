@@ -26,15 +26,22 @@
 # Output (stdout):
 #   ASSEMBLED|name|output_path|bytes
 #
-# Example:
-#   .opencode/tools/assemble-prompt.sh \
-#     -a code-reviewer -t review -n s1-reviewer \
-#     --task tmp/s1-reviewer-task.txt
+# Examples:
+#   # Review — single task file (reviewers are read-only)
+#   .opencode/tools/assemble-prompt.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
+#
+#   # Code implementation — writes directly to original files
+#   .opencode/tools/assemble-prompt.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
 
 set -euo pipefail
 
 # ── Locate repo assets (templates, agents) via SCRIPT_DIR ──
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# cd to repo root so relative output paths (tmp/...) resolve regardless of
+# the caller's cwd. Script moved 4 levels deep under skills/best-workflow/.
+REPO_ROOT="$( cd "$SCRIPT_DIR/../../../.." && pwd )"
+cd "$REPO_ROOT"
+# Assets live alongside this script (renamed from .opencode/agents, /templates).
 AGENTS_DIR="$SCRIPT_DIR/../agents"
 TEMPLATES_DIR="$SCRIPT_DIR/../templates"
 
@@ -63,6 +70,14 @@ done
 case "$NAME" in
   */*|*\\*|*\|*|*\&*|*\$*)
     echo "ERROR: NAME contains unsafe characters (/, \\, |, &, \$): $NAME" >&2
+    exit 1
+    ;;
+esac
+
+# Reject AGENT values that would enable path traversal
+case "$AGENT" in
+  */*|*\\*|*\.\.*)
+    echo "ERROR: AGENT contains unsafe characters (/, \\, ..): $AGENT" >&2
     exit 1
     ;;
 esac
@@ -115,19 +130,35 @@ OUT_DIR="$(dirname "$OUTPUT")"
 mkdir -p "$OUT_DIR"
 
 # ── Assemble prompt ──
-# Use | as sed delimiter so NAME containing / would be flagged above; here
-# we use a safe character class already validated.
+# Cache-aware ordering: stable content first (reused across calls = cached),
+# volatile content last (per-call = uncached). Provider prompt caches match
+# on exact prefix — if byte 1 differs, the entire cache invalidates.
 {
-  printf 'You are an AI agent named %s.\n\n' "$NAME"
+  # ── STABLE PREFIX (shared across all calls of same type) ──
+  # Folder hints are constant across all calls → cache-friendly at the very top.
   printf 'Agent folder is: %s \n\n' "$SCRIPT_DIR/../agents"
   printf 'Scripts folder is: %s \n\n' "$SCRIPT_DIR/"
-  printf 'Before claiming something is missing or broken — grep for existing guards, handlers, or implementations first.\n\n'
+  # Coordination headers (solo agent + grep-first rule) now live in the
+  # coordination templates themselves, not hardcoded here.
+  sed "s|{NAME}|${NAME}|g" "$COORDINATION"
+  printf '\n\n'
+  if [[ "$INCLUDE_SEVERITY" == "true" ]]; then
+    cat "$SEVERITY"
+    printf '\n\n'
+  fi
+  cat "$QUALITY"
+  printf '\n'
+  # ── SEMI-STABLE (reused across calls using same agent type) ──
   cat "$AGENT_MD"
-  printf '\n\n--- TASK ASSIGNMENT ---\n\n'
-  # Substitute {NAME}, then strip any report-file paths the lead wrote
-  # (the script auto-injects the correct one — lead never specifies it).
+  printf '\n'
+  # ── VOLATILE SUFFIX (unique per agent instance) ──
+  printf 'You are an AI agent named %s.\n\n' "$NAME"
+  printf '%s\n\n' '--- TASK ASSIGNMENT ---'
+  # Substitute {NAME}, then strip standalone report-file paths the lead wrote
+  # (only lines that are sole report paths — prose references like
+  # "See s1-reviewer-report.md for context" are preserved).
   sed "s|{NAME}|${NAME}|g" "$TASK_FILE" \
-    | sed -E '/-report\.md/d'
+    | sed -E '/^[[:space:]]*(-[[:space:]]*)?(tmp\/)?[a-zA-Z0-9_.-]+-report\.md[[:space:]]*$/d'
   printf '\n'
   # Auto-inject the WRITABLE FILES directive. For review/research types,
   # source files are read-only. For code type, source files from the task
@@ -143,13 +174,6 @@ mkdir -p "$OUT_DIR"
       printf 'All other source files are READ-ONLY.\n'
       ;;
   esac
-  sed "s|{NAME}|${NAME}|g" "$COORDINATION"
-  printf '\n\n'
-  if [[ "$INCLUDE_SEVERITY" == "true" ]]; then
-    cat "$SEVERITY"
-    printf '\n\n'
-  fi
-  cat "$QUALITY"
   printf '\n'
 } > "$OUTPUT"
 
