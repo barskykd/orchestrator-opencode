@@ -1,39 +1,33 @@
 #!/usr/bin/env bash
 # spawn-glm.sh — Spawn one agent for Orchestration Workflow
 #
-# Pipes prompt from file through stdin to OpenCode CLI. Uses opencode's
-# configured default model. Pass -m to override with a specific model.
+# Pipes prompt from file through stdin to OpenCode or Pi CLI. Pass -m to override with a specific model.
 # Stdin piping avoids shell escaping issues with complex prompt content.
 #
 # Agents run until completion — no max-turns limit.
 #
 # Usage:
-#   .opencode/tools/spawn-glm.sh -n NAME -f PROMPT_FILE [-m MODEL]
+#   spawn-glm.sh -n NAME -f PROMPT_FILE [-m MODEL]
 #
 # Arguments:
 #   -n, --name         Agent name (log: tmp/{NAME}-log.txt)
 #   -f, --prompt-file  Path to the prompt text file
-#   -m, --model        Model to use (optional, defaults to opencode's configured model)
+#   -m, --model        Model to use (optional)
+#   --pi               Use pi to spawn subagents
 #
 # Output (stdout):
 #   SPAWNED|name|pid|log_file
 #
 # Examples:
-#   .opencode/tools/spawn-glm.sh -n sec-reviewer -f tmp/sec-reviewer-prompt.txt
-#   .opencode/tools/spawn-glm.sh -n s1-reviewer -f tmp/s1-reviewer-prompt.txt -m zai/glm-5.1
+#   spawn-glm.sh -n sec-reviewer -f tmp/sec-reviewer-prompt.txt
+#   spawn-glm.sh -n s1-reviewer -f tmp/s1-reviewer-prompt.txt -m zai/glm-5.1
 
 set -euo pipefail
 
-# ── Resolve repo root so tmp/ paths are always ./tmp ──
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
-cd "$REPO_ROOT"
 
-command -v opencode &>/dev/null || \
-  { echo "ERROR: opencode not found in PATH. Install OpenCode first." >&2; exit 1; }
 
 # ── Parse arguments ──
-NAME="" PROMPT_FILE="" MODEL=""
+NAME="" PROMPT_FILE="" MODEL="" PIDEV=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,9 +35,18 @@ while [[ $# -gt 0 ]]; do
     -f|--prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     -m|--model)       MODEL="$2";       shift 2 ;;
     -h|--help)        sed -n '2,/^$/p' "$0" | sed 's/^# \?//'; exit 0 ;;
+    --pi)             PIDEV=1 shift 1 ;;
     *) echo "ERROR: Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
+
+if [[ -n "$PIDEV" ]]; then
+  command -v pi &>/dev/null || \
+  { echo "ERROR: pi not found in PATH. Install pi first." >&2; exit 1; }
+else
+  command -v opencode &>/dev/null || \
+  { echo "ERROR: opencode not found in PATH. Install OpenCode first." >&2; exit 1; }
+fi
 
 # ── Validate ──
 [[ -z "$NAME" ]]        && { echo "ERROR: -n NAME required" >&2; exit 1; }
@@ -67,15 +70,23 @@ STATUS="tmp/${NAME}-status.txt"
 
 # ── Spawn: pipe prompt file → opencode run ──
 # Model defaults to opencode's configured model; -m overrides when provided.
-if [[ -n "$MODEL" ]]; then
-  opencode run \
+if [[ -n "$PIDEV" ]]; then
+  if [[ -n "$MODEL" ]]; then
+    pi --print --model "$MODEL" --mode json < "$PROMPT_FILE" > "$LOG" 2>&1 &
+  else
+    pi --print --mode json < "$PROMPT_FILE" > "$LOG" 2>&1 &
+  fi
+else
+  if [[ -n "$MODEL" ]]; then
+      opencode run \
     -m "$MODEL" \
     --format json \
     < "$PROMPT_FILE" > "$LOG" 2>&1 &
-else
-  opencode run \
+  else
+    opencode run \
     --format json \
     < "$PROMPT_FILE" > "$LOG" 2>&1 &
+  fi
 fi
 
 PID=$!

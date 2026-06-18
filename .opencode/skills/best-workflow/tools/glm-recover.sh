@@ -18,14 +18,13 @@
 # Writes nothing. Safe to run anytime.
 #
 # Usage:
-#   .opencode/tools/glm-recover.sh
+#   glm-recover.sh
 
 set -euo pipefail
 
 # ── Locate repo root so paths resolve regardless of CWD ──
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
-cd "$REPO_ROOT"
+REPO_ROOT="$( pwd )"
 
 # ── Helper: pick the newest file matching a glob pattern ──
 # Uses bash -nt comparison (POSIX test), portable across Git Bash and macOS.

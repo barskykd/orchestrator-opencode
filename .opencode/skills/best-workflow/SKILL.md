@@ -12,7 +12,7 @@ This is useful for storing intermediate results, reports, or data during multi-s
 
 ## Agents
 
-110+ specialized AI agents for OpenCode. Agents are stored in `<skill-folder>/agents/` as Markdown files with YAML frontmatter.
+110+ specialized AI agents. Agents are stored in `<skill-folder>/agents/` as Markdown files with YAML frontmatter.
 
 **Discovery:** Do FULL read of `<skill-folder>/agents/INDEX.md` for the full categorized agent directory (110+ agents grouped by domain). Pick the MOST specialized agent — domain-specific checklists and anti-patterns only work when the agent matches the domain.
 
@@ -269,11 +269,11 @@ Lead coordinates batches, never investigates findings manually, and writes the f
 
 **Spawn:**
 ```bash
-<skill-folder>/tools/spawn-glm.sh -n NAME -f PROMPT_FILE [-m MODEL]
+<skill-folder>/tools/spawn-glm.sh -n NAME -f PROMPT_FILE [-m MODEL] [--pi]
 ```
-`-m` is optional — when omitted, the agent uses opencode's configured default model. Use `-m MODEL` to override with a specific model. Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME}-report.md`, log: `tmp/{NAME}-log.txt`. Also writes to `tmp/{NAME}-status.txt` (reliable on Windows — stdout can be lost when parallel `.cmd` processes launch).
+`-m` is optional — when omitted, the agent uses default model. Use `-m MODEL` to override with a specific model. Use `--pi` if running inside pi harness (sub-agents should use same harness). Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME}-report.md`, log: `tmp/{NAME}-log.txt`. Also writes to `tmp/{NAME}-status.txt` (reliable on Windows — stdout can be lost when parallel `.cmd` processes launch).
 
-**Stage types and model usage** — all agents use the opencode default model unless overridden with `-m`. The `-m` flag is available for any stage type when a specific model is needed.
+**Stage types and model usage** — all agents use the default model unless overridden with `-m`. The `-m` flag is available for any stage type when a specific model is needed.
 
 | Stage Type | Description |
 |-----------|-------------|
@@ -544,7 +544,7 @@ Answer these explicitly in your plan. Every subtask must have an assigned agent 
 
 **Stage decomposition rule (MANDATORY):** If stage N+1 does NOT consume stage N's verified output — they're independent — MERGE them into a single stage with parallel agents. Sequential stages are only correct when the next stage actually needs the previous stage's verified findings as `PRIOR CONTEXT:`.
 
-Write full plan to `tmp/glm-plan.md`. All agents use the opencode default model. The `-m` flag on `spawn-glm.sh` is available to override when a specific model is needed. Quick-fix agents (see Lead Role) are always single-model but run outside the plan's stage structure — they handle agent output issues within an existing workflow, never as a standalone workflow replacement. Checkpoint.
+Write full plan to `tmp/glm-plan.md`. The `-m` flag on `spawn-glm.sh` is available to override when a specific model is needed. Quick-fix agents (see Lead Role) are always single-model but run outside the plan's stage structure — they handle agent output issues within an existing workflow, never as a standalone workflow replacement. Checkpoint.
 
 **Dependency analysis (MANDATORY — lead's responsibility, before spawning):** Before spawning any stage, the lead builds a dependency graph of agents within that stage:
 1. For each agent, list files it will READ and files it will WRITE/CREATE
@@ -591,7 +591,7 @@ Describe problems and desired behavior — do NOT paste exact fix code unless pr
 
 #### Agent Spawning
 
-All agents use the opencode default model. The `-m` flag is available to override when a specific model is needed but is never required.
+The `-m` flag is available to override when a specific model is needed but is never required.
 
 **How it works for review/research/audit stages:**
 1. A single agent gets the agent `.md` and the task assignment — it works independently
@@ -934,7 +934,7 @@ If you catch yourself about to call `Task(subagent_type=...)` — stop, use `spa
 
 **Lead code prohibition (MANDATORY):** The lead never writes, edits, or modifies project source code. Every code change — implementation, bug fixes, config adjustments, script changes, one-liners — goes through a spawned agent. The lead's tools (Edit, Write) are for tmp/ artifacts only: task files, prompts, synthesis reports. The only exception is editing AGENTS.md itself (meta-configuration).
 
-**Platform:** `opencode` on all platforms (spawn-glm.sh handles invocation). Always redirect output to log files.
+**Platform:** `opencode` or `pi` on all platforms (spawn-glm.sh handles invocation, use `--pi` flag if running in pi). Always redirect output to log files.
 
 ---
 

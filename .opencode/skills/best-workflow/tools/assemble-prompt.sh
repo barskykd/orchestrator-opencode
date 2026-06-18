@@ -8,7 +8,7 @@
 # appends the lead's task file, and writes the complete prompt to tmp/.
 #
 # Usage:
-#   .opencode/tools/assemble-prompt.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
+#   assemble-prompt.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
 #
 # Arguments:
 #   -a, --agent       Agent name — reads .opencode/agents/{agent}.md
@@ -28,10 +28,10 @@
 #
 # Examples:
 #   # Review — single task file (reviewers are read-only)
-#   .opencode/tools/assemble-prompt.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
+#   assemble-prompt.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
 #
 #   # Code implementation — writes directly to original files
-#   .opencode/tools/assemble-prompt.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
+#   assemble-prompt.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
 
 set -euo pipefail
 
@@ -39,8 +39,7 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # cd to repo root so relative output paths (tmp/...) resolve regardless of
 # the caller's cwd. Script moved 4 levels deep under skills/best-workflow/.
-REPO_ROOT="$( cd "$SCRIPT_DIR/../../../.." && pwd )"
-cd "$REPO_ROOT"
+
 # Assets live alongside this script (renamed from .opencode/agents, /templates).
 AGENTS_DIR="$SCRIPT_DIR/../agents"
 TEMPLATES_DIR="$SCRIPT_DIR/../templates"

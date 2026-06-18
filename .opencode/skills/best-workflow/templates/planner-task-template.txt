@@ -1,6 +1,6 @@
 === TASK (s0-planner) ===
 PROJECT: [fill in project path]
-YOUR TASK: Research this project thoroughly and produce a custom Orchestration Workflow manifest. Explore the full codebase structure, read the agent INDEX at `.opencode/agents/INDEX.md`, classify the task on 5 axes (size, domain breadth, ambiguity, severity, change type), select appropriate bricks from the palette, and write the plan to `tmp/glm-plan.md`.
+YOUR TASK: Research this project thoroughly and produce a custom Orchestration Workflow manifest. Explore the full codebase structure, read the agent INDEX at `<best-workflow skill folder>/agents/INDEX.md`, classify the task on 5 axes (size, domain breadth, ambiguity, severity, change type), select appropriate bricks from the palette, and write the plan to `tmp/glm-plan.md`.
 MUST ANSWER:
 1. How many distinct domain areas does this project have? Map each to the best specialist agent from the INDEX.
 2. What is the task classification on all 5 axes, with code-context justification for each?

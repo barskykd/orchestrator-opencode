@@ -1,5 +1,5 @@
 ---
-description: Specialized planning agent that researches a project thoroughly and produces a custom Orchestration Workflow manifest by classifying the task and dynamically selecting from the brick palette. Runs on default opencode model with clean context dedicated to planning.
+description: Specialized planning agent that researches a project thoroughly and produces a custom Orchestration Workflow manifest by classifying the task and dynamically selecting from the brick palette. Runs on with clean context dedicated to planning.
 mode: subagent
 tools:
   read: true
@@ -206,7 +206,7 @@ TEST            Run build + test suite. Single agent, default model — mechanic
 
 #### Model Assignment
 
-All agents use the opencode default model. No dual-model pairs, no model-specific roles. The `-m` flag on `spawn-glm.sh` is available to override when a specific model is needed.
+All agents use the default model. No dual-model pairs, no model-specific roles. The `-m` flag on `spawn-glm.sh` is available to override when a specific model is needed.
 
 The role catalog for agent assignment is:
 - **Planner**: `agentic-planner` — full research + plan production

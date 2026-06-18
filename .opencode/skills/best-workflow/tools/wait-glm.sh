@@ -12,8 +12,8 @@
 # - Automatic health check after all agents finish
 #
 # Usage (backward-compatible — bare PIDs still work):
-#   .opencode/tools/wait-glm.sh PID1 [PID2 PID3 ...]
-#   .opencode/tools/wait-glm.sh name1:PID1 [name2:PID2 ...]
+#   wait-glm.sh PID1 [PID2 PID3 ...]
+#   wait-glm.sh name1:PID1 [name2:PID2 ...]
 #
 # When names are provided, progress monitoring and health check target
 # only those agents. Bare PIDs skip log monitoring during wait.
@@ -23,11 +23,6 @@
 #   Polls every 10 seconds.
 
 set -euo pipefail
-
-# ── Resolve repo root so tmp/ paths are always ./tmp ──
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
-cd "$REPO_ROOT"
 
 [[ $# -eq 0 ]] && { echo "Usage: wait-glm.sh PID1 [PID2 ...] or name1:PID1 [name2:PID2 ...]" >&2; exit 1; }
 
