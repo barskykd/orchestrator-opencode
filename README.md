@@ -11,6 +11,20 @@ OpenCode is great at single-file edits, but complex tasks overwhelm a single con
 - **Smart scoping** — The planner researches your project first, classifies the task on 5 axes (size, domain breadth, ambiguity, severity, change type), then builds a custom workflow selecting only the stages the task actually needs. A cosmetic fix uses a handful of agents; a critical multi-file refactor gets full adversarial verification
 - **Domain experts** — 110+ specialized agents (from `python-pro` to `security-reviewer` to `ios-pro`), each with domain-specific checklists and anti-patterns
 
+## Agent Quality — Real-Project Tested
+
+All 111 agents have been tested and optimized through a rigorous methodology:
+
+**Method:** Each agent was tested in a 3-way comparison (original / polished / smart-applied) on real production codebases — not synthetic tasks. Tested on real production codebases.
+
+**Result:** The winning variant for each agent was selected based on objective criteria: finding accuracy, evidence quality, cross-file tracing depth, and zero false positives. Agents were compared head-to-head against Claude Code's own native subagents — **our agents won every comparison.**
+
+**Cognitive Mode Tags:** Each agent in INDEX.md carries a Mode tag (TRACE / SWEEP / KNOW) derived from these tests, indicating which cognitive approach it's best at. This helps match the right agent to the task type.
+
+- **TRACE** — best at following data/logic/flow through code (bug hunting, pipeline analysis)
+- **SWEEP** — best at systematic checklist verification (security audits, idiom reviews)
+- **KNOW** — best at applying deep domain/framework expertise (.NET, Spring, Django)
+
 ## Quick Start
 
 ```bash
@@ -61,6 +75,47 @@ Everything runs autonomously — the lead coordinates, agents do the work, verif
 - [OpenCode CLI](https://opencode.ai)
 - At least one LLM provider configured in `~/.config/opencode/opencode.json`
 - `uv` (auto-installed if missing — handles Python dependencies for tools)
+
+## Automatic tasks execution
+
+Run multiple tasks sequentially without manual intervention. Write tasks in `loop-tasks.txt`, one per line with a `[ ]` marker. The script picks the first pending task, sends it to opencode for automatic processing, marks it `[x]` when done, commits the progress, and moves to the next.
+
+Compatible with **Windows** (Git Bash), **Linux**, and **macOS**.
+
+### Quick Start
+
+1. Add tasks to `loop-tasks.txt`:
+   ```
+   # How to use task loop file
+   # =========================
+   # [ ] Task to do (full description in one line)
+   # [x] Finished task (marked by lead)
+
+   [ ] Add dark mode support with automatic system theme detection
+   [x] Fix race condition in payment confirmation handler
+   [ ] Refactor database layer to use connection pooling
+   ```
+
+   - `[ ]` — pending task (will be processed)
+   - `[x]` — completed task (skipped automatically)
+   - `#` — comment (ignored)
+
+2. Configure the command and model at the top of `loop-tasks-run.sh`:
+   ```bash
+   OPENCODE_CMD="opencode"
+   MODEL="-m zai/glm-5.2"    # set to empty string to use default model
+   ```
+
+3. Run it:
+   ```bash
+   ./loop-tasks-run.sh
+   ```
+
+   Stop at any time with `Ctrl+C`. The current task will be interrupted but already-completed tasks stay marked `[x]` — restarting picks up the next pending one.
+
+### Output
+
+Logs go to `tmp/loop-runs/`. Each task gets its own timestamped log file.
 
 ## License
 

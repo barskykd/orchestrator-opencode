@@ -45,6 +45,8 @@ Prefer fewer well-scoped agents over many thin ones. Every agent must have a cle
 | Technology match | Agent name matches the exact tech stack | No exact match exists |
 | Task scope | Well-defined, single-responsibility subtask | Exploratory or cross-cutting work |
 
+**Mode tags:** Each agent in INDEX.md has a TRACE/SWEEP/KNOW tag. When reviewing agent assignments in a plan, verify the specialist's mode matches the task type. When two specialists are equally qualified, prefer the one whose mode fits. This is a tiebreaker — specialization always wins.
+
 ## Common Team Compositions
 
 | Task Pattern | Recommended Team |

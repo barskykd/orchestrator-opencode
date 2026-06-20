@@ -241,6 +241,12 @@ When a task spans multiple domains, split in two stages:
 - Tests → `test-automator`
 - Documentation → `documentation-pro`
 
+**Mode consideration:** Each agent in INDEX.md has a Mode tag (TRACE/SWEEP/KNOW) from real-project A/B/C testing. When choosing between equally-specialized agents for a domain, prefer the one whose Mode matches the task's cognitive demand:
+- Bug hunting, cross-file tracing, architecture assessment → TRACE
+- Security audit, checklist sweep, idiom review → SWEEP
+- Framework-specific patterns, API/gotcha knowledge → KNOW
+This is a tiebreaker, not a primary criterion — specialization always wins.
+
 **Step 2: Split by volume (within each specialist group).** If the work for one specialist exceeds a single agent's context window (~50-100 files / 15-25K LOC), split into N sub-groups by module or concern. Each sub-group gets its own agent. State the per-sub-group file count and LOC in the plan.
 
 Example: Large Python refactor touching auth, api, and data modules → 3 python-pro agents, one per module.
