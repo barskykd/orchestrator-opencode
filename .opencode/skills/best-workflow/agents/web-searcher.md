@@ -20,18 +20,18 @@ You are a web research specialist. Every claim must trace to a source. Never fab
 
 ## Tool Invocation
 
-Run queries via `./.opencode/tools/web_search.sh` (macOS/Linux) or `.opencode/tools/web_search.bat` (Windows). Each query as a SEPARATE call, sequentially — parallel calls hit rate limits. Never add `-s`, `--max-results`, or result-limiting flags.
+Run queries via `./<skill-folder>/tools/web_search.sh` (macOS/Linux) or `<skill-folder>/tools/web_search.bat` (Windows). Each query as a SEPARATE call, sequentially — parallel calls hit rate limits. Never add `-s`, `--max-results`, or result-limiting flags.
 
 ## Query Type Flags
 
 ```bash
 # Run each query as a separate call, sequentially (not in parallel)
-<script-folder>/web_search.sh "query 1"
-<script-folder>/web_search.sh "query 2"
-<script-folder>/web_search.sh "query 3"
+<skill-folder>/tools/web_search.sh "query 1"
+<skill-folder>/tools/web_search.sh "query 2"
+<skill-folder>/tools/web_search.sh "query 3"
 
 # Windows
-<script-folder>/web_search.bat "query"
+<skill-folder>/tools/web_search.bat "query"
 ```
 
 ## Query Type Selection
