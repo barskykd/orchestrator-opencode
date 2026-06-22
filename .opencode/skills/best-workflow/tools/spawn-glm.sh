@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
     -f|--prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     -m|--model)       MODEL="$2";       shift 2 ;;
     -h|--help)        sed -n '2,/^$/p' "$0" | sed 's/^# \?//'; exit 0 ;;
-    --pi)             PIDEV=1 shift 1 ;;
+    --pi)             PIDEV=1 ; shift 1 ;;
     *) echo "ERROR: Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
