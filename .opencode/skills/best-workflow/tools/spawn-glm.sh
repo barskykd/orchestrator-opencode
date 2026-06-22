@@ -72,9 +72,9 @@ STATUS="tmp/${NAME}-status.txt"
 # Model defaults to opencode's configured model; -m overrides when provided.
 if [[ -n "$PIDEV" ]]; then
   if [[ -n "$MODEL" ]]; then
-    pi --print --model "$MODEL" --mode json < "$PROMPT_FILE" > "$LOG" 2>&1 &
+    pi --print --model "$MODEL" < "$PROMPT_FILE" > "$LOG" 2>&1 &
   else
-    pi --print --mode json < "$PROMPT_FILE" > "$LOG" 2>&1 &
+    pi --print < "$PROMPT_FILE" > "$LOG" 2>&1 &
   fi
 else
   if [[ -n "$MODEL" ]]; then

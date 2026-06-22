@@ -271,7 +271,7 @@ Lead coordinates batches, never investigates findings manually, and writes the f
 ```bash
 <skill-folder>/tools/spawn-glm.sh -n NAME -f PROMPT_FILE [-m MODEL] [--pi]
 ```
-`-m` is optional — when omitted, the agent uses default model. Use `-m MODEL` to override with a specific model. Use `--pi` if running inside pi harness (sub-agents should use same harness). Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME}-report.md`, log: `tmp/{NAME}-log.txt`. Also writes to `tmp/{NAME}-status.txt` (reliable on Windows — stdout can be lost when parallel `.cmd` processes launch).
+`-m` is optional — when omitted, the agent uses default model. Use `-m MODEL` to override with a specific model. Use `--pi` if running inside pi harness (sub-agents should use same harness). Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME}-report.md`, log: `tmp/{NAME}-log.txt` (for pi harness check pi's session logs in ~/.pi/agent/sessions/ instead). Also writes to `tmp/{NAME}-status.txt` (reliable on Windows — stdout can be lost when parallel `.cmd` processes launch).
 
 **Stage types and model usage** — all agents use the default model unless overridden with `-m`. The `-m` flag is available for any stage type when a specific model is needed.
 
