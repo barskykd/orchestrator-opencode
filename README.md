@@ -1,3 +1,15 @@
+Fork of the wonderful orchestrator https://github.com/itohnobue/orchestrator-opencode
+- packaged as skill
+- added support for [Pi](https://pi.dev/) harness
+
+Can be installed via following command
+
+`npx skills add https://github.com/barskykd/orchestrator-opencode/`
+
+Original README.md below
+
+---
+
 # Orchestration Workflow
 
 A parallel AI agent orchestrator for [OpenCode](https://opencode.ai). Instead of doing work itself, the lead decomposes your task, spawns specialist agents to do the actual work in parallel, verifies their output through an adversarial pipeline, and delivers production-ready results — all automatically. Works with any LLM provider.
