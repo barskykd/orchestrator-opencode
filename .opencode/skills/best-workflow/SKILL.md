@@ -7,7 +7,7 @@ description: Use only then explicitly asked.
 You can use the `tmp/` subfolder in the current project folder to save any temporary files if needed.
 This is useful for storing intermediate results, reports, or data during multi-step workflows.
 
-**Path resolution:** All `tmp/` paths in workflow instructions resolve to `$REPO_ROOT/tmp/` where `$REPO_ROOT` is the absolute path to the repository root (the directory where `opencode` was launched). The tool scripts (`assemble-prompt.sh`, `spawn-glm.sh`, `wait-glm.sh`, `glm-recover.sh`) compute `REPO_ROOT` and use absolute `${REPO_ROOT}/tmp/` paths so that agent reports, logs, and artifacts are always written to the correct location regardless of each agent's working directory or the project under inspection. When writing task files or instructions for agents, always reference `tmp/` paths relative to `$REPO_ROOT`.
+**Path resolution:** All `tmp/` paths in workflow instructions resolve to `$REPO_ROOT/tmp/` where `$REPO_ROOT` is the absolute path to the repository root (agent's work directory). The tool scripts (`assemble-prompt.sh`, `spawn-glm.sh`, `wait-glm.sh`, `glm-recover.sh`) compute `REPO_ROOT` and use absolute `${REPO_ROOT}/tmp/` paths so that agent reports, logs, and artifacts are always written to the correct location regardless of each agent's working directory or the project under inspection. When writing task files or instructions for agents, always reference `tmp/` paths relative to `$REPO_ROOT`.
 
 ---
 

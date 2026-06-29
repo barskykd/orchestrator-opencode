@@ -24,7 +24,7 @@ set -euo pipefail
 
 # ── Locate repo root so paths resolve regardless of CWD ──
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( pwd )"
+REPO_ROOT="$PWD"
 
 # ── Helper: pick the newest file matching a glob pattern ──
 # Uses bash -nt comparison (POSIX test), portable across Git Bash and macOS.

@@ -24,6 +24,8 @@
 
 set -euo pipefail
 
+REPO_ROOT="$PWD"
+
 [[ $# -eq 0 ]] && { echo "Usage: wait-glm.sh PID1 [PID2 ...] or name1:PID1 [name2:PID2 ...]" >&2; exit 1; }
 
 # Parse arguments — support both "PID" and "name:PID" formats

@@ -37,6 +37,7 @@ set -euo pipefail
 
 # ── Locate repo assets (templates, agents) via SCRIPT_DIR ──
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+REPO_ROOT="$PWD"
 # cd to repo root so relative output paths (tmp/...) resolve regardless of
 # the caller's cwd. Script moved 4 levels deep under skills/best-workflow/.
 

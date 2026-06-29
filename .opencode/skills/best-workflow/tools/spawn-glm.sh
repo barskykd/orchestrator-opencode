@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-
+REPO_ROOT="$PWD"
 
 # ── Parse arguments ──
 NAME="" PROMPT_FILE="" MODEL="" PIDEV=""
