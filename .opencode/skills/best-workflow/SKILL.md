@@ -1,3 +1,8 @@
+---
+name: best-workflow
+description: Use only then explicitly asked.
+---
+
 # Project-Specific — orchestrator-opencode
 
 ## Skills (Workflows)
