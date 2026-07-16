@@ -11,7 +11,7 @@
 #   assemble-prompt.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
 #
 # Arguments:
-#   -a, --agent       Agent name — reads .opencode/agents/{agent}.md
+#   -a, --agent       Agent name — reads <best-workflow folder>/agents/{agent}.md
 #   -t, --task-type   Task type: review | code | research
 #   -n, --name        Agent instance name (e.g. s1-reviewer, s2i1-impl-auth)
 #   --task            Path to task assignment file (PROJECT, ENVIRONMENT,

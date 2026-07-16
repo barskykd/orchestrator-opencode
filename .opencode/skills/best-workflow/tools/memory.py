@@ -40,6 +40,7 @@ import hashlib
 import json
 import re
 import sys
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -58,10 +59,10 @@ __version__ = "5.1.0"
 # =============================================================================
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-PROJECT_ROOT = SCRIPT_DIR.parent.parent
+PROJECT_ROOT = Path(os.getcwd())
 KNOWLEDGE_FILE = PROJECT_ROOT / "knowledge.md"
 SESSION_FILE = PROJECT_ROOT / "session.md"
-SESSION_POINTER_FILE = SCRIPT_DIR.parent / "current_session"
+SESSION_POINTER_FILE = PROJECT_ROOT / ".agents" / "current_session"
 
 # Default session name
 DEFAULT_SESSION = "default"
@@ -141,7 +142,7 @@ def get_current_session(cli_session: str | None = None) -> str:
     Priority order:
     1. CLI flag (--session / -S)
     2. Environment variable (MEMORY_SESSION)
-    3. Pointer file (.opencode/current_session)
+    3. Pointer file (.agents/current_session)
     4. Default ("default")
     """
     # 1. CLI flag takes precedence
@@ -922,7 +923,7 @@ Session Commands:
 Session Resolution (priority order):
   1. --session / -S flag
   2. MEMORY_SESSION environment variable
-  3. .opencode/current_session pointer file
+  3. .agents/current_session pointer file
   4. "default"
 
 Categories: {', '.join(CATEGORIES)}

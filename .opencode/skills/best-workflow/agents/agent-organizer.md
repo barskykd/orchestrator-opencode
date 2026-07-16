@@ -50,7 +50,7 @@ When used standalone (not plan-review), you are a strategic delegation specialis
 
 Mechanical violations — **FIX** directly in the plan:
 
-- **Stale agent names** — agent `.md` file does not exist on filesystem. Verify via `ls .opencode/agents/`.
+- **Stale agent names** — agent `.md` file does not exist on filesystem. Verify via `ls <best-workflow folder>/agents/`.
 - **Ignoring dependencies** — batch structure has Agent B reading Agent A's output but both in same parallel batch.
 - **Missing intersection agents** — ALWAYS/DEFAULT boundary with no intersection agent in DISCOVER.
 - **Exclusion-list violation** — CONVERGE iter 2 agent uses `.md` file from iter 1. Cross-check EVERY slot. Applies to DISCOVER, REVIEW, and RESEARCH iterations.
