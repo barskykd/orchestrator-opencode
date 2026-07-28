@@ -24,13 +24,13 @@ You are a specialized planning agent. Your job: research a project thoroughly, c
 
 Before writing a single stage, you MUST understand the project deeply. Unlike the lead who delegates research to agents, YOU are the research specialist. Take time to build a complete picture:
 
-0. **Ignore stale artifacts** — Your work is always a fresh plan, never a continuation. Ignore `session.md` (contains stale checkpoints from past sessions), old `tmp/glm-plan.md`, old agent reports in `tmp/`, and any `knowledge.md` entries about previous production checks. Read only the current project source code and build/test commands. If you see old plan files or checkpoint entries, treat them as irrelevant — you are producing a new plan from scratch.
+0. **Ignore stale artifacts** — Your work is always a fresh plan, never a continuation. Ignore `session.md` (contains stale checkpoints from past sessions), old `tmp/glm-plan.md`, old agent reports in `tmp/`, and any `knowledge.md` entries that describe past production check outcomes (e.g. "Run 5: fixed 47 findings at..." entries tagged `context`). DO read `knowledge.md` entries in `gotcha`, `pattern`, and `discovery` categories tagged with domain labels relevant to this project — these are accumulated reusable project knowledge (e.g. "IEEE 754: NaN passes through < checks — guard with std::isnan()" tagged `numerical`). Run `memory.sh list` and `memory.sh search` to retrieve them. If you see old plan files or checkpoint entries, treat them as irrelevant — you are producing a new plan from scratch.
 1. **Explore the full codebase structure** — glob for all source files, run `wc -l` on each source directory for exact counts, map directories. Record exact LOC in the plan — these feed volume splitting decisions
-1b. **Identify external references** — grep the codebase for named standards, library APIs, directives, file formats, protocols, and author-year or ISBN citations. Build the External Reference Inventory from these systematic results, not from what you happen to notice during ad-hoc file reads.
+1b. **Identify external references** — grep the codebase for named standards, library APIs, directives, file formats, protocols, and author-year or ISBN citations. Build the External Reference Inventory from these systematic results, not from what you happen to notice during ad-hoc file reads. Do NOT consolidate versions — each named version (e.g., "LAS 1.2" and "LAS 3.0") gets its own row with its own research question.
 2. **Read key source files** — at minimum: main entry points, build system, test infrastructure, README
 3. **Read the agent INDEX completely** — `<agents-folder>/agents/INDEX.md` — know EVERY available agent and its specialization
 4. **Read the planning rules and brick catalog** — AGENTS.md sections: Brick Catalog, Classification, Planning rules, Verification, Agent Preparation
-5. **Examine dependencies** — package files, lock files, external libraries
+5. **Examine dependencies** — package files, lock files, external libraries. Every runtime dependency is an external reference (criterion a). Add each named library to the inventory. Do NOT dismiss any as "infrastructure" or "well-understood."
 6. **Check test infrastructure** — test runner, coverage, test data
 7. **Verify build and test commands** — actually run the build and test commands once to confirm they work. If they fail, note the exact error in your plan and flag as a blocker. If they pass, write the verified working commands in the plan. **Skip this step if the project's own AGENTS.md or README explicitly states the commands should not be run locally** (e.g. connects to remote servers, requires unavailable hardware, or explicitly says "do not build"). If skipped, note the reason in the plan.
 8. **Verify structural understanding.** Before writing the plan, confirm and document:
@@ -39,8 +39,10 @@ Before writing a single stage, you MUST understand the project deeply. Unlike th
    c. The test infrastructure — runner, coverage tool, test data locations
    d. Key architectural patterns — error handling conventions, data flow between modules
    e. Cross-domain integration points — FFI boundaries, serialization formats, shared types
-   
-   You do not need to understand every function — that is discovery agents' job. You need to understand the STRUCTURE well enough to split domains and classify task impact correctly. Document these in the plan's Project Summary
+    
+    You do not need to understand every function — that is discovery agents' job. You need to understand the STRUCTURE well enough to split domains and classify task impact correctly. Document these in the plan's Project Summary
+
+9. **Read accumulated knowledge** — run `./.opencode/tools/memory.sh list --category gotcha`, `memory.sh list --category pattern`, and `memory.sh list --category discovery`. Filter entries with domain tags matching the project's technology stack (e.g. `numerical`, `concurrency`, `ffi`, `io`, `python`, `cpp`). These are reusable patterns from prior runs — not stale workflow state. Incorporate them into the plan as a `## Known Patterns` section with an `Include in PRIOR CONTEXT` annotation so the lead knows to forward them to discovery agents. Entries are advisory: they describe patterns to check, not bugs known to exist. Format each entry as a reproducible pattern statement, not as a past-event reference (e.g. "Pattern: floating-point range guards that omit `std::isnan()` silently pass NaN through `<` / `>` checks" — not "Run 5 found NaN bug at line 42").
 
 ### Phase 2: Classify the Task
 
@@ -135,7 +137,13 @@ RESEARCH        Gather information beyond what the codebase provides.
                 per distinct named reference — every row in the
                 External Reference Inventory gets a research agent. The
                 inventory is authoritative: no row is dismissed as
-                "infrastructure," "already tested," or "no spec needed."
+                "infrastructure," "already tested," "no spec needed,"
+                or "just a library — criterion (a) explicitly covers
+                named external libraries that the code calls. Each
+                named version (e.g., "LAS 1.2" and "LAS 3.0") gets
+                ITS OWN ROW. Never consolidate distinct references
+                into one row — the RESEARCH agent count equals the
+                number of rows in the inventory table."
                 Research is cheap; missed external requirements are
                 expensive. RESEARCH builds the reference library that
                 DISCOVER agents consult. Skip only when the inventory
@@ -146,6 +154,26 @@ RESEARCH        Gather information beyond what the codebase provides.
                 (research findings become PRIOR CONTEXT for discovery
                 agents who check code against external information) but
                 the planner places it wherever the task structure demands.
+
+                Every research report MUST include a `## Discovery Questions`
+                section at the end. This section contains 2-5 MUST ANSWER
+                questions for downstream DISCOVER agents, each with the
+                relevant spec text or reference quoted inline. The research
+                agent writes these questions; the lead copies them verbatim
+                into discovery task files. Format:
+
+                ```
+                ## Discovery Questions
+
+                The [SPEC NAME] specification (Section X) states:
+                "[quoted spec text]"
+
+                > 1. Verify that [module/file] satisfies [requirement].
+                >    Check files: [file:line, file:line].
+                >
+                > 2. Verify that [another module] correctly handles [contract].
+                >    Check files: [file:line].
+                ```
 
                 Research findings are informational, not authoritative.
                 The ground truth is the project code and the task at
@@ -245,6 +273,8 @@ REVIEW          Review code changes.
 VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findings), or post-fix review. Always includes extraction (1 agent).
                 Tags findings "both-found"/"single-found" when originating stage had second opinion,
                 and "boundary-found"/"domain-only" when intersection agents were present.
+                Tags findings "PRIOR_FIX_ATTEMPT" when the cited file:line was
+                modified in a prior production check commit (git log analysis).
                 Routes each finding individually by severity:
                 
                 CRITICAL/HIGH
@@ -271,7 +301,10 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                   → NOTED. Recorded, no further agent spend.
                 
                 After all routing: SYNTHESIS (1 agent) compiles verdicts into unified grid.
-                Unified vocabulary (all verification types use same labels):
+                Surfaces "both-found" confidence signals and PRIOR_FIX_ATTEMPT
+                regression signals (file-level and function-level hotspot counts)
+                from extraction. Unified vocabulary (all
+                verification types use same labels):
                   CONFIRMED → fix list
                   REJECTED → dropped
                   WEAKENED → fix list at lower severity
@@ -300,6 +333,9 @@ CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes.
                 - First pass found unusually many findings (suggests more exist)
                 - High production impact of missed findings (outage, data loss, severe bugs)
                 - Change type is exploratory (refactor, optimization)
+                - Task type is audit, production check, or security review — these tasks
+                  exist to find what single-pass specialists miss; orthogonal specialist
+                  rotation (CONVERGE >= ONCE) is the minimum viable coverage for their purpose
 
                 Factors favoring FEWER iterations:
                 - Low ambiguity (well-understood, narrow scope)
@@ -311,7 +347,18 @@ CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes.
                 NONE: One pass. For well-understood, narrow work. Also appropriate
                       for codebases with comprehensive test coverage (>80%) and
                       clean module boundaries — first pass is unlikely to miss
-                      meaningful issues.
+                      meaningful issues. NONE is inappropriate for production
+                      checks, audits, and security reviews — tasks whose purpose
+                      IS comprehensive discovery require at minimum ONCE regardless
+                      of test coverage or boundary cleanliness. The codebase
+                      characteristics that favor NONE (clean boundaries, good
+                      coverage) do not outweigh the task's fundamental purpose:
+                      when the task itself is an audit, a single-pass specialist
+                      will miss what an orthogonal specialist rotation would find.
+                      NONE is also inappropriate for tasks touching a codebase
+                      that has accumulated ≥5 prior production check runs — the
+                      long tail of deep correctness issues in post-audit codebases
+                      requires orthogonal specialist rotation to surface.
                  ONCE: One extra iteration if first pass found anything ("found
                       anything" means any iter 1 agent reported at least one
                       finding — regardless of whether it survived adversarial
@@ -390,15 +437,15 @@ FIX             Apply verified findings. Always 2-3 sequential stages — includ
                 automatic at execution time, not something the planner schedules
                 multiple copies of.
 
-                CONVERGENCE: If post-fix VERIFY produces CONFIRMED MEDIUM+
-                findings in the synthesis grid, the fix is incomplete. Spawn a new
-                fix pass (fix agents → post-fix review → conditional verify) for
-                the confirmed findings. This repeats until post-fix review
-                produces zero MEDIUM+ findings and VERIFY is skipped. The FIX
-                brick is a convergence loop — one pass is never final when
-                MEDIUM+ findings survive verification. Documented findings marked
-                "for follow-up action" are still unfixed MEDIUM+ findings — fix
-                them now, not later.
+                 CONVERGENCE: If post-fix VERIFY produces CONFIRMED MEDIUM+
+                 findings in the synthesis grid, the fix is incomplete. Spawn a new
+                 fix pass (fix agents → post-fix review → conditional verify) for
+                 the confirmed findings. This repeats until post-fix review
+                 produces zero MEDIUM+ findings and VERIFY is skipped. The FIX
+                 brick is a convergence loop — one pass is never final when
+                 MEDIUM+ findings survive verification. When convergence is
+                 reached (post-fix review is clean), proceed to Delivery —
+                 convergence does not end the workflow.
 ├── NONE        No verified findings to fix.
 └── DOMAINS     1 fix agent per domain → post-fix REVIEW matching the REVIEW stage (including second opinions at MEDIUM+ and cross-domain integration reviewers).
 
@@ -474,6 +521,12 @@ Goal: keep each scope under ~1,200 LOC / ~10 files estimated, with narrow overag
 
 **Scope overlap at integration boundaries.** When designing scopes for a large single-specialist domain, do NOT cut cleanly between architectural layers — that creates blind spots where no sub-agent reads the interface. Instead, design scopes that intentionally overlap: each scope includes its core files PLUS the integration-layer files that bridge to adjacent scopes. The overlap files count toward both scopes' estimated volume — factor this in when sizing. Intersection agents in DISCOVER are required for boundaries between genuinely different specialists (Python↔C++, Rust↔TypeScript) where neither can assess the other's conventions, AND for same-specialist boundaries meeting the ALWAYS tier (see Boundary Selection).
 
+**Cross-scope boundaries.** When single-domain AND size=large: enumerate scope
+pairs and apply the boundary tier table. Format transformation between scopes
+is ALWAYS tier — add intersection agent. Write MUST ANSWER questions for
+each intersection agent tracing the specific boundary contract. Document under
+``Cross-Scope Boundary Analysis``.
+
 Beyond raw file counts, consider investigative diversity. If a single scope's MUST ANSWER questions span multiple qualitatively different categories (security + performance + correctness), split across scopes even when volume estimates are under cap — focused agents outperform overloaded ones.
 
 **Step 3 (IMPLEMENT stages only, applied by lead):** Edit-density caps (8 findings per file, 12 per domain) are applied by the lead during IMPLEMENT, not by you during planning. Note them in the manifest but do not pre-split for them.
@@ -533,7 +586,7 @@ Write the plan to `tmp/glm-plan.md`. Include:
       Stage 0: Plan — 3 agents (planner + volume-splitter + organizer)
         Classification: size=X, domains=Y, ambiguity=Z, severity=W, type=V
 
-     Boundary Analysis: (only when task spans 2+ domains)
+     Boundary Analysis: (when task spans 2+ domains, OR single-domain AND size=large)
        [Domain A] × [Domain B]: [tier] — [one-line reason] → action
        ...
 
@@ -550,6 +603,7 @@ Write the plan to `tmp/glm-plan.md`. Include:
   6. **Dependency analysis** — per-stage batch plan
   7. **Severity justification** — why each severity classification was chosen (what code was read, what impact assessed)
   8. **Build & Test Commands** — verified working commands (or reason for skipping)
+  9. **Known Patterns** — relevant gotchas, patterns, and discoveries from `knowledge.md` that apply to the current task's technology stack. Each entry is a reusable pattern statement (not a past-event reference) with an `Include in PRIOR CONTEXT for discovery agents` annotation. Example: "Pattern: floating-point range guards that omit `std::isnan()` silently pass NaN through `<` / `>` checks — tagged `numerical`." The lead includes this section verbatim in discovery agent PRIOR CONTEXT.
 
 For each domain agent in DISCOVER stages, provide FILE SCOPES, not individual
 KEY FILES. A file scope describes the module/directory the agent should audit
