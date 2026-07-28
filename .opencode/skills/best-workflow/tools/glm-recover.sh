@@ -22,6 +22,12 @@
 
 set -euo pipefail
 
+# Source .bestworkflowrc from project-local config directories (silently skip if missing)
+for _rc_dir in ".agents" ".opencode" ".pi" "."; do
+  _rc_file="${_rc_dir}/.bestworkflowrc"
+  [[ -f "$_rc_file" ]] && source "$_rc_file"
+done
+
 # ── Locate repo root so paths resolve regardless of CWD ──
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$PWD"

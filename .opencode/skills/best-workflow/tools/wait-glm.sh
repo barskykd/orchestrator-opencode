@@ -24,6 +24,12 @@
 
 set -euo pipefail
 
+# Source .bestworkflowrc from project-local config directories (silently skip if missing)
+for _rc_dir in ".agents" ".opencode" ".pi" "."; do
+  _rc_file="${_rc_dir}/.bestworkflowrc"
+  [[ -f "$_rc_file" ]] && source "$_rc_file"
+done
+
 REPO_ROOT="$PWD"
 
 [[ $# -eq 0 ]] && { echo "Usage: wait-glm.sh PID1 [PID2 ...] or name1:PID1 [name2:PID2 ...]" >&2; exit 1; }
@@ -43,6 +49,12 @@ for arg in "$@"; do
     PIDS+=("$arg")
   fi
 done
+
+# Check if bestworkflow_wait bash function is defined. If it is - call it and skip rest of the script.
+if declare -f bestworkflow_wait &>/dev/null; then
+  bestworkflow_wait
+  exit $?
+fi
 
 DONE=()
 for pid in "${PIDS[@]}"; do

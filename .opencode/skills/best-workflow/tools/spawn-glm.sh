@@ -24,6 +24,12 @@
 
 set -euo pipefail
 
+# Source .bestworkflowrc from project-local config directories (silently skip if missing)
+for _rc_dir in ".agents" ".opencode" ".pi" "."; do
+  _rc_file="${_rc_dir}/.bestworkflowrc"
+  [[ -f "$_rc_file" ]] && source "$_rc_file"
+done
+
 REPO_ROOT="$PWD"
 
 # ── Parse arguments ──
@@ -39,6 +45,12 @@ while [[ $# -gt 0 ]]; do
     *) echo "ERROR: Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
+
+# Check if bestworkflow_spawn function is defined. If it is call it and skip rest of this script.
+if declare -f bestworkflow_spawn &>/dev/null; then
+  bestworkflow_spawn
+  exit $?
+fi
 
 if [[ -n "$PIDEV" ]]; then
   command -v pi &>/dev/null || \
@@ -63,6 +75,9 @@ case "$NAME" in
     exit 1
     ;;
 esac
+
+# Fall back to BESTWORKFLOW_MODEL env var if -m not given
+[[ -z "$MODEL" && -n "${BESTWORKFLOW_MODEL:-}" ]] && MODEL="$BESTWORKFLOW_MODEL"
 
 mkdir -p "${REPO_ROOT}/tmp"
 LOG="${REPO_ROOT}/tmp/${NAME}-log.txt"
