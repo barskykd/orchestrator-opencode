@@ -8,7 +8,7 @@ A single agent working alone has one analytical lens. Two different specialists 
 
 - **Parallel execution** — Up to 10 specialist agents work simultaneously on different parts of your task. Scales to what the task needs: no wasted agents, no under-staffed stages
 - **Adversarial verification** — Before any finding becomes a fix, adversarial agents try to **falsify** it. They read full source context and search exhaustively at every level — function guards, caller validation, framework protections, type system invariants, test coverage. Only findings that survive become actionable fixes. This catches false positives a single agent would have "fixed" into a regression
-- **Iterative convergence** — For complex or critical work, the planner schedules a second pass with genuinely different specialists. No agent reappears, no role-swapping tricks. Each iteration gets its own full verify cycle. Agents stop when they find nothing new
+- **Iterative convergence** — The planner sets an iteration ceiling per stage (ONCE default, LOOP for highly ambiguous or production-critical work); whether an iteration actually fires is decided mechanically by the prior VERIFY synthesis grid (≥1 CONFIRMED HIGH/CRITICAL finding). Iterations use genuinely different specialists — no agent reappears, no role-swapping tricks. Each iteration gets its own full verify cycle
 - **Smart scoping** — A three-agent planning pipeline researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, change type), then builds a custom workflow from available bricks. A cosmetic fix gets a handful of agents; a critical multi-domain refactor gets full adversarial verification with second opinions and cross-domain intersection audits
 - **External research** — When tasks touch unfamiliar technology, compliance requirements, or authoritative references outside the codebase, RESEARCH agents gather information first (web search, docs, standards). Research findings become PRIOR CONTEXT for discovery agents — the codebase audit knows what to look for
 - **Domain experts** — 112+ specialized agents, each with domain-specific checklists and anti-patterns. At MEDIUM+ severity, every discovery and review stage gets a second opinion from a **different** specialist — two independent analytical frameworks on the same code
@@ -64,14 +64,16 @@ You ask: "Add dark mode" or "Fix the payment race condition"
          ▼
    Verification  Extraction deduplicates findings and tags confidence
          │       signals (both-found, boundary-found). Adversarial
-         │       agents (1:1 for CRITICAL/HIGH, 1 per 5 for MEDIUM)
+         │       agents (1:1 for CRITICAL, 1 per 3 for HIGH,
+         │       1 per 8 for MEDIUM)
          │       try to falsify every finding — reading full source
          │       context, searching for guards, types, tests. Only
          │       survivors become actionable fixes
          ▼
-   [Converge?]   For complex/critical work: spawn a second pass
-         │       with genuinely different specialists. Repeat
-         │       until no new findings — then proceed to fix
+   [Converge?]   Fires only when the prior VERIFY grid contains
+         │       ≥1 CONFIRMED HIGH/CRITICAL finding (mechanical).
+         │       Iterations use genuinely different specialists;
+         │       converged when the grid shows no CONFIRMED HIGH+
          ▼
   Implementation Domain specialists write the code. Reviewed by
          │       code-reviewer + second opinion at MEDIUM+.
@@ -100,9 +102,9 @@ Everything runs autonomously — the lead coordinates, agents do the work, verif
 
 **RESEARCH brick** — Gathers information beyond what the codebase provides: web search, documentation, standards, community knowledge, git history, or deep codebase exploration. Placed before DISCOVER when research findings inform what to look for in code. Research agents scale by topic specialization, not second opinions. Findings carry confidence tiers (CONFIRMED/LIKELY/TENTATIVE/SPECULATIVE) that propagate through PRIOR CONTEXT and delivery. VERIFY is skipped for purely informational findings; runs when findings include code-level references.
 
-**Verification** — Before any finding becomes a fix, it goes through adversarial checking. An extraction agent deduplicates findings and tags them with confidence signals (both-found, boundary-found). Severity-routed adversarial agents then try to falsify each one: 1:1 for CRITICAL/HIGH findings, 1 per batch of 5 for MEDIUM findings. Each agent reads full source context (minimum 30 lines) and exhaustively searches for counter-evidence at every level — function guards, caller validation, framework protections, type system invariants, test coverage. Only findings that survive become fixes.
+**Verification** — Before any finding becomes a fix, it goes through adversarial checking. An extraction agent deduplicates findings and tags them with confidence signals (both-found, boundary-found). Severity-routed adversarial agents then try to falsify each one: 1:1 for CRITICAL findings, 1 per batch of 3 for HIGH findings, 1 per batch of 8 for MEDIUM findings. Each agent reads full source context (minimum 30 lines) and exhaustively searches for counter-evidence at every level — function guards, caller validation, framework protections, type system invariants, test coverage. Only findings that survive become fixes.
 
-**Convergence** — For interconnected modules, dense coupling, or HIGH+ severity tasks, the planner can schedule iterative passes (ONCE: one extra iteration; LOOP: up to 3). Each pass uses genuinely different specialists — no agent reappears, no role-swapping. Each iteration gets its own full verify stage before the next iteration spawns. Convergence happens when agents stop finding new issues.
+**Convergence** — The planner sets an iteration ceiling per stage (ONCE: at most one extra iteration, the default; LOOP: up to 3 for highly ambiguous or production-critical work). Firing is mechanical, never a lead judgment call: an iteration fires only when the prior VERIFY synthesis grid contains at least one CONFIRMED HIGH/CRITICAL finding (adversarially verified). REJECTED or WEAKENED findings never trigger. Each pass uses genuinely different specialists — no agent reappears, no role-swapping. Each iteration gets its own full verify stage before the next iteration spawns. A stage with zero CONFIRMED HIGH+ in its grid is converged after one pass.
 
 **Dynamic workflow** — No fixed pipeline. The planner classifies your task on 5 axes (size, domain breadth, ambiguity, severity, change type) and assembles a custom stage plan from a brick catalog (RESEARCH/DISCOVER/IMPLEMENT/REVIEW/VERIFY/CONVERGE/FIX/TEST). A cosmetic text change skips discovery and research. A critical security fix gets full adversarial verification with research on CVE context and multiple discovery passes.
 

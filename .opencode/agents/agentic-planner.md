@@ -26,11 +26,11 @@ Before writing a single stage, you MUST understand the project deeply. Unlike th
 
 0. **Ignore stale artifacts** — Your work is always a fresh plan, never a continuation. Ignore `session.md` (contains stale checkpoints from past sessions), old `tmp/glm-plan.md`, old agent reports in `tmp/`, and any `knowledge.md` entries that describe past production check outcomes (e.g. "Run 5: fixed 47 findings at..." entries tagged `context`). DO read `knowledge.md` entries in `gotcha`, `pattern`, and `discovery` categories tagged with domain labels relevant to this project — these are accumulated reusable project knowledge (e.g. "IEEE 754: NaN passes through < checks — guard with std::isnan()" tagged `numerical`). Run `memory.sh list` and `memory.sh search` to retrieve them. If you see old plan files or checkpoint entries, treat them as irrelevant — you are producing a new plan from scratch.
 1. **Explore the full codebase structure** — glob for all source files, run `wc -l` on each source directory for exact counts, map directories. Record exact LOC in the plan — these feed volume splitting decisions
-1b. **Identify external references** — grep the codebase for named standards, library APIs, directives, file formats, protocols, and author-year or ISBN citations. Build the External Reference Inventory from these systematic results, not from what you happen to notice during ad-hoc file reads. Do NOT consolidate versions — each named version (e.g., "LAS 1.2" and "LAS 3.0") gets its own row with its own research question.
+1b. **Identify external references** — grep the codebase for named standards, library APIs, directives, file formats, protocols, and author-year or ISBN citations. Build the External Reference Inventory from these systematic results, not from what you happen to notice during ad-hoc file reads. Do NOT consolidate versions — each named version (e.g., "LAS 1.2" and "LAS 3.0") gets its own row with its own research question. Apply the precision criterion per row (see RESEARCH brick catalog): rows are candidates; a row becomes a research agent only when verification requires external documentation the domain specialist lacks. Document every skip with a one-line reason.
 2. **Read key source files** — at minimum: main entry points, build system, test infrastructure, README
 3. **Read the agent INDEX completely** — `.opencode/agents/INDEX.md` — know EVERY available agent and its specialization
 4. **Read the planning rules and brick catalog** — AGENTS.md sections: Brick Catalog, Classification, Planning rules, Verification, Agent Preparation
-5. **Examine dependencies** — package files, lock files, external libraries. Every runtime dependency is an external reference (criterion a). Add each named library to the inventory. Do NOT dismiss any as "infrastructure" or "well-understood."
+5. **Examine dependencies** — package files, lock files, external libraries. Every runtime dependency is a candidate reference (criterion a), but the precision criterion decides whether it gets a research agent: standard usage of a generic, well-documented library (numpy, chardet, stdlib) is possessed by the domain specialist and gets NO agent (document the skip with a one-line reason). Named formats/protocols/standards and algorithms from dependencies DO get agents.
 6. **Check test infrastructure** — test runner, coverage, test data
 7. **Verify build and test commands** — actually run the build and test commands once to confirm they work. If they fail, note the exact error in your plan and flag as a blocker. If they pass, write the verified working commands in the plan. **Skip this step if the project's own AGENTS.md or README explicitly states the commands should not be run locally** (e.g. connects to remote servers, requires unavailable hardware, or explicitly says "do not build"). If skipped, note the reason in the plan.
 8. **Verify structural understanding.** Before writing the plan, confirm and document:
@@ -50,7 +50,7 @@ Assess the task on 5 independent axes by reading the actual code. Do NOT use key
 
 | Axis | Values | What to assess |
 |------|--------|---------------|
-| **Size** | tiny / small / medium / large | Files affected, lines of change expected. Count source files and source LOC only — not tests, not configs. Mechanical thresholds: tiny = single file + <10 lines. small = ≤10 files AND ≤1,200 LOC. medium = ≤15 files AND ≤1,500 LOC. large = exceeds either threshold OR spans multiple specialist domains. (These thresholds mirror the volume-split limits — a task that would require splitting discovery agents is large by definition.) |
+| **Size** | tiny / small / medium / large | Files affected, lines of change expected. Count source files and source LOC only — not tests, not configs. Mechanical thresholds: tiny = single file + <10 lines. small = ≤10 files AND ≤3,000 LOC. medium = ≤15 files AND ≤3,500 LOC. large = exceeds either threshold OR spans multiple specialist domains. (These thresholds mirror the volume-split limits — a task that would require splitting discovery agents is large by definition.) |
 | **Domain breadth** | single / few (2-3) / wide (4+) | Distinct source-code specialists (languages, frameworks) — not packages and not audit roles. If all affected files use the same specialist (e.g. all swift-pro), it's single-domain regardless of how many packages or architectural layers the task touches. Test-automator, documentation-pro, and security-reviewer are audit lenses applied to the same source code; they do not increase domain breadth. |
 | **Ambiguity** | none / low / medium / high | How clear is the desired outcome? Known pattern vs. exploratory? |
 | **Severity** | none / low / medium / high / critical | Production and product impact (see severity guide below) |
@@ -121,9 +121,10 @@ PLAN            Always FULL (3 agents: planner + volume-splitter + organizer, al
 
 RESEARCH        Gather information beyond what the codebase provides.
                 External (web, docs, standards, community knowledge) or
-                internal (git history, deep codebase exploration). The
+                internal (git history, deep codebase exploration).
                 The planner MUST add RESEARCH for every external reference
-                the codebase depends on. A reference exists when the code:
+                that passes the precision criterion. A reference exists when
+                the code:
                 (a) calls a named API from an external standard or library,
                 (b) uses a named standard's directives or pragmas,
                 (c) reads/writes a named file format or protocol,
@@ -131,23 +132,38 @@ RESEARCH        Gather information beyond what the codebase provides.
                 or (e) selects behavior based on which named implementation
                 is available. A formal spec URL is NOT required. The test:
                 would verifying this code require knowledge of external
-                documentation? If yes — reference. Count mechanically
+                documentation? If yes — candidate reference. Count mechanically
                 from systematic codebase grep during Phase 1 — not from
-                what you happen to notice in ad-hoc file reads. One agent
-                per distinct named reference — every row in the
-                External Reference Inventory gets a research agent. The
-                inventory is authoritative: no row is dismissed as
-                "infrastructure," "already tested," "no spec needed,"
-                or "just a library — criterion (a) explicitly covers
-                named external libraries that the code calls. Each
-                named version (e.g., "LAS 1.2" and "LAS 3.0") gets
-                ITS OWN ROW. Never consolidate distinct references
-                into one row — the RESEARCH agent count equals the
-                number of rows in the inventory table."
+                what you happen to notice in ad-hoc file reads.
+
+                PRECISION CRITERION (applied per candidate, documented per
+                decision): a candidate gets a research agent ONLY when
+                verification requires external documentation the domain
+                specialist does not already possess. Two-part test:
+                  1. NECESSITY: does verifying this code require external
+                     documentation the specialist lacks? (NO → no agent)
+                  2. POSSESSED-KNOWLEDGE: would a research agent produce
+                     anything beyond what the assigned domain specialist
+                     already knows? (NO → no agent)
+                Standard usage of a generic, well-documented library (e.g.
+                numpy array ops, chardet.detect, stdlib) does NOT get a
+                research agent — the domain specialist possesses this; a
+                research agent would only restate public docs and its
+                Discovery Questions would add noise to discovery prompts.
+                Named formats/protocols/standards (LAS, DEV, TLS, SQLite...)
+                and named algorithms/papers DO get agents — byte-level
+                compliance and external semantics are not in the specialist's
+                head. Each named version (e.g., "LAS 1.2" and "LAS 3.0")
+                gets ITS OWN ROW — never consolidate distinct references or
+                versions into one row. Every SKIP must be documented in the
+                plan with a one-line reason (e.g., "numpy — standard usage,
+                python-pro possesses"). The RESEARCH agent count is the
+                number of rows that PASS the precision criterion.
                 Research is cheap; missed external requirements are
                 expensive. RESEARCH builds the reference library that
-                DISCOVER agents consult. Skip only when the inventory
-                is empty (systematic grep found zero references).
+                DISCOVER agents consult. RESEARCH may be NONE when no
+                reference passes the precision criterion (e.g. purely
+                internal tasks drawing entirely from codebase knowledge).
                 Produce a structured inventory table in the plan
                 (see Phase 6 — External Reference Inventory).
                 RESEARCH typically precedes DISCOVER
@@ -277,11 +293,18 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                 modified in a prior production check commit (git log analysis).
                 Routes each finding individually by severity:
                 
-                CRITICAL/HIGH
+                CRITICAL
                   → ADVERSARIAL AGENT (1 agent per finding — 1:1)
                   → Exhaustive falsification: assume the claimed issue is a misunderstanding and search exhaustively before confirming. For "missing X" findings, searching for X and finding it in no reachable code path IS valid evidence. Search for
                     counter-evidence at every level (same function, caller, framework,
                     type system, tests). Label CONFIRMED / REJECTED / WEAKENED with evidence.
+                
+                HIGH
+                  → ADVERSARIAL AGENT (1 agent per batch of 3 findings)
+                  → Same exhaustive falsification methodology as CRITICAL — reads cited
+                    code with full surrounding context (minimum 30 lines), exhaustively
+                    searches for counter-evidence at every level, labels each finding
+                    CONFIRMED / REJECTED / WEAKENED with evidence.
                 
                 CRITICAL/HIGH from intersection or cross-domain integration review
                   (any finding spanning domain boundaries, from DISCOVER or REVIEW)
@@ -289,8 +312,8 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                   → Cross-domain falsification: verify Domain A side + Domain B side + bridge.
                 
                 MEDIUM
-                  → ADVERSARIAL AGENT (1 agent per batch of 5 findings)
-                  → Same exhaustive falsification methodology as CRITICAL/HIGH —
+                  → ADVERSARIAL AGENT (1 agent per batch of 8 findings)
+                  → Same exhaustive falsification methodology as CRITICAL —
                     reads cited code with full surrounding context (minimum 30 lines),
                     exhaustively searches for counter-evidence at every level, labels
                     CONFIRMED / REJECTED / WEAKENED with evidence. Default position:
@@ -324,65 +347,54 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                 Always runs when DISCOVER, REVIEW, RESEARCH, or post-fix review produced findings with code-level references.
                 When CONFIRMED findings exist at MEDIUM or above, FIX=DOMAINS must follow.
 
-CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes.
-                PLANNER DECIDES which variant. Not locked to severity.
+CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The planner
+                sets the iteration CEILING; whether an iteration actually runs is decided
+                MECHANICALLY by the prior VERIFY synthesis grid — never by planner choice
+                and never by lead judgment. There is no CONVERGE=NONE: every DISCOVER and
+                REVIEW stage is convergence-eligible, and a stage converges by failing the
+                trigger, not by being opted out.
 
-                Factors favoring MORE iterations:
-                - High ambiguity (exploratory task, unknown scope)
-                - Complex/interconnected codebase (hidden dependencies)
-                - First pass found unusually many findings (suggests more exist)
-                - High production impact of missed findings (outage, data loss, severe bugs)
-                - Change type is exploratory (refactor, optimization)
-                - Task type is audit, production check, or security review — these tasks
-                  exist to find what single-pass specialists miss; orthogonal specialist
-                  rotation (CONVERGE >= ONCE) is the minimum viable coverage for their purpose
+                Ceiling factors (planner's input — the CEILING, not the trigger):
+                - High ambiguity (exploratory task, unknown scope) → favors LOOP
+                - Complex/interconnected codebase (hidden dependencies) → favors LOOP
+                - High production impact of missed findings (outage, data loss, severe
+                  bugs) → favors LOOP
+                - Change type is exploratory (refactor, optimization) → favors LOOP
+                - Task type is audit, production check, or security review — does NOT by
+                  itself raise the ceiling; firing is purely mechanical (see TRIGGER)
+                - Low ambiguity (well-understood, narrow scope) → ONCE default
+                - Mechanical/deterministic changes (rename, config value) → ONCE default
+                - Clean, well-tested codebase → ONCE default
+                - Time-sensitive (emergency fix — accept risk, note it) → ONCE default
 
-                Factors favoring FEWER iterations:
-                - Low ambiguity (well-understood, narrow scope)
-                - First pass found nothing or very little
-                - Mechanical/deterministic changes (rename, config value)
-                - Clean, well-tested codebase
-                - Time-sensitive (emergency fix — accept risk, note it)
+                CEILING — ONCE (default): at most 1 additional iteration. Applies to
+                       every DISCOVER/REVIEW stage unless the planner justifies a higher
+                       ceiling.
+                CEILING — LOOP (rare): up to 3 additional iterations, each gated by the
+                       same trigger. For highly ambiguous or production-critical work
+                       where missed findings would be unacceptable.
 
-                NONE: One pass. For well-understood, narrow work. Also appropriate
-                      for codebases with comprehensive test coverage (>80%) and
-                      clean module boundaries — first pass is unlikely to miss
-                      meaningful issues. NONE is inappropriate for production
-                      checks, audits, and security reviews — tasks whose purpose
-                      IS comprehensive discovery require at minimum ONCE regardless
-                      of test coverage or boundary cleanliness. The codebase
-                      characteristics that favor NONE (clean boundaries, good
-                      coverage) do not outweigh the task's fundamental purpose:
-                      when the task itself is an audit, a single-pass specialist
-                      will miss what an orthogonal specialist rotation would find.
-                      NONE is also inappropriate for tasks touching a codebase
-                      that has accumulated ≥5 prior production check runs — the
-                      long tail of deep correctness issues in post-audit codebases
-                      requires orthogonal specialist rotation to surface.
-                 ONCE: One extra iteration if first pass found anything ("found
-                      anything" means any iter 1 agent reported at least one
-                      finding — regardless of whether it survived adversarial
-                      verification; the point is different iter 2 specialists
-                      should re-examine what iter 1 noticed). Use when
-                      the planner's Phase 1 research reveals interconnected modules,
-                      dense coupling, non-uniform code patterns, or the stage deploys
-                      12+ agents — characteristics suggesting a first pass may miss
-                      issues. Also used when severity is HIGH/CRITICAL AND one
-                      of: (a) total source LOC > 10K, (b) dense cross-module
-                      coupling (5+ shared headers/interfaces across 3+ modules),
-                      (c) non-uniform code patterns (mixed language paradigms,
-                      FFI boundaries, legacy + modern code), (d) 4+ specialist
-                      domains. Severity alone does not force ONCE — a 300-line
-                      HIGH-severity bugfix on a small, clean codebase should use
-                      NONE. ONCE is NOT the universal default — well-tested,
-                      cleanly-structured codebases should use NONE.
-                LOOP: Up to 3 iterations, stop on empty report. For highly ambiguous
-                      or production-critical work where missed findings would be
-                      unacceptable.
+                TRIGGER (mechanical — the ONLY way an iteration fires): the immediately
+                       preceding VERIFY synthesis grid contains at least one CONFIRMED
+                       finding at HIGH or CRITICAL severity (adversarially verified).
+                       - REJECTED findings never trigger.
+                       - WEAKENED findings trigger only when the corrected severity
+                         remains HIGH+.
+                       - Documentation-domain findings (which skip adversarial
+                         verification) are EXCLUDED from the trigger — they cannot
+                         cause an iteration to fire.
+                       - A stage with zero CONFIRMED HIGH+ in its VERIFY grid is
+                         CONVERGED after one pass, regardless of task type, codebase
+                         cleanliness, or prior production-check history.
+
+                This replaces the old "any finding = spawn" trigger. The old rules that
+                forced CONVERGE>=ONCE on audits/production checks and on codebases with
+                >=5 prior production check runs are REMOVED: firing is purely a function
+                of the verified synthesis grid.
                 
                 **CONVERGE for RESEARCH:** The spawn trigger for research
                 iterations differs from DISCOVER/REVIEW (which use "any
-                finding = spawn"). For RESEARCH, spawn iter 2 when any
+                CONFIRMED HIGH+ = spawn"). For RESEARCH, spawn iter 2 when any
                 research finding is rated LIKELY or lower (i.e., not
                 CONFIRMED) on a question that is critical to downstream
                 stages. Each iteration narrows scope: iter 1 asks "What
@@ -401,9 +413,10 @@ CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes.
                 
                 Each iteration gets its own VERIFY stage. Iter 1's VERIFY runs BEFORE
                 iter 2 spawns — the synthesis grid from iter 1's VERIFY determines
-                whether iter 2 spawns (any finding = spawn) AND provides PRIOR CONTEXT
-                for iter 2 agents. Do NOT merge both iterations' verification into a
-                single stage after both iterations complete. The plan structure must be:
+                whether iter 2 spawns (any CONFIRMED HIGH+ in the grid = spawn) AND
+                provides PRIOR CONTEXT for iter 2 agents. Do NOT merge both iterations'
+                verification into a single stage after both iterations complete. The
+                plan structure must be:
                   Stage N:   DISCOVER iter 1
                   Stage N+1: VERIFY iter 1
                   Stage N+2: DISCOVER iter 2 (conditional, PRIOR CONTEXT from N+1)
@@ -472,8 +485,9 @@ The role catalog for agent assignment is:
 - **Review**: `code-reviewer` — reviews code for bugs, quality, correctness
 - **Review second opinion** (MEDIUM+): language specialist
 - **Fix**: specialist per domain — applies verified fixes
-- **Adversarial verification (CRITICAL/HIGH)**: `adversarial-reviewer` — falsifies CRITICAL/HIGH findings (1:1)
-- **Adversarial verification (MEDIUM)**: `adversarial-reviewer` — falsifies MEDIUM findings (1 per 5)
+- **Adversarial verification (CRITICAL)**: `adversarial-reviewer` — falsifies CRITICAL findings (1:1)
+- **Adversarial verification (HIGH)**: `adversarial-reviewer` — falsifies HIGH findings (1 per 3)
+- **Adversarial verification (MEDIUM)**: `adversarial-reviewer` — falsifies MEDIUM findings (1 per 8)
 - **Verification extraction**: `research-analyst` — deduplicates, classifies findings, tags confidence signals
 - **Verification synthesis**: `research-analyst` — compiles verification grid, challenges severity
 - **Test**: `debugger` or `build-error-resolver` — runs build + tests, fixes failures
@@ -515,9 +529,9 @@ without listing specific concerns, default to **source code correctness** plus
 concerns the user did not name. Source + test quality on the same language
 stack is still a single-domain project.
 
-**Step 2: Group into logical scopes.** You provide FILE SCOPES — module-level groupings with rough LOC estimates from Phase 1 research. The volume-splitter (a downstream agent in Stage 0) handles all mechanical work: resolving scopes to exact file paths with `wc -l` counts, applying split/merge rules against the 1,200/1,500 LOC caps, and rewriting FILE SCOPES to exact KEY FILES. Your job is to group files into coherent domains by concern area (auth separate from I/O, core separate from simulation), not to pre-compute exact splits.
+**Step 2: Group into logical scopes.** You provide FILE SCOPES — module-level groupings with rough LOC estimates from Phase 1 research. The volume-splitter (a downstream agent in Stage 0) handles all mechanical work: resolving scopes to exact file paths with `wc -l` counts, applying split/merge rules against the 3,000/3,500 LOC caps, and rewriting FILE SCOPES to exact KEY FILES. Your job is to group files into coherent domains by concern area (auth separate from I/O, core separate from simulation), not to pre-compute exact splits.
 
-Goal: keep each scope under ~1,200 LOC / ~10 files estimated, with narrow overages (up to ~1,500 LOC / ~15 files) acceptable for cohesive modules. If uncertain whether a scope will trigger a mechanical split, estimate conservatively and let the splitter decide.
+Goal: keep each scope under ~3,000 LOC / ~10 files estimated, with narrow overages (up to ~3,500 LOC / ~15 files) acceptable for cohesive modules. If uncertain whether a scope will trigger a mechanical split, estimate conservatively and let the splitter decide.
 
 **Scope overlap at integration boundaries.** When designing scopes for a large single-specialist domain, do NOT cut cleanly between architectural layers — that creates blind spots where no sub-agent reads the interface. Instead, design scopes that intentionally overlap: each scope includes its core files PLUS the integration-layer files that bridge to adjacent scopes. The overlap files count toward both scopes' estimated volume — factor this in when sizing. Intersection agents in DISCOVER are required for boundaries between genuinely different specialists (Python↔C++, Rust↔TypeScript) where neither can assess the other's conventions, AND for same-specialist boundaries meeting the ALWAYS tier (see Boundary Selection).
 
@@ -577,7 +591,7 @@ Common dependencies: fix agent depends on verified findings, test agent depends 
 Write the plan to `tmp/glm-plan.md`. Include:
 
 1. **Project summary** — what the project is, key structure
-2. **External Reference Inventory** — a table of every external reference the codebase names by recognizable name or version (file formats, protocols, standards, algorithms, build targets). One row per named version (e.g., "LAS 1.2" and "LAS 3.0" are separate rows). Columns: reference name, where cited (file:line), research question. The RESEARCH agent count equals the number of rows. Do not merge versions into one row.
+2. **External Reference Inventory** — a table of every external reference the codebase names by recognizable name or version (file formats, protocols, standards, algorithms, build targets). One row per named version (e.g., "LAS 1.2" and "LAS 3.0" are separate rows). Columns: reference name, where cited (file:line), research question, precision-criterion decision (PASS / SKIP + reason). The RESEARCH agent count equals the number of PASS rows. Do not merge versions into one row.
 3. **Task classification** — 5-axis assessment with justification for each axis
 4. **Workflow manifest** — ordered list of stages:
    ```

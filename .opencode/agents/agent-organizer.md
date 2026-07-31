@@ -34,15 +34,15 @@ When used standalone (not plan-review), you are a strategic delegation specialis
     - Every ALWAYS/DEFAULT boundary has intersection agents in DISCOVER and cross-domain reviewers in REVIEW
     - Every agent in the manifest (including intersection agents) has at least one MUST ANSWER question scoped to its key files. Add missing questions mechanically covering the agent's boundary contract or domain scope.
    - Every SKIP boundary has a one-line justification with exact call-site count
-    - CONVERGE iter 2 exclusion list is mechanically correct (cross-check EVERY iter 2 agent slot against the exclusion list — do not trust the plan's claim without verifying each slot)
-    - When the task's change type or description indicates the task IS a production check, audit, or security review, CONVERGE >= ONCE on all DISCOVER and REVIEW stages. Flag CONVERGE=NONE on an audit task as mechanical violation — the task's fundamental purpose requires orthogonal specialist rotation. (Plan text reading "check," "audit," "review," or "production" as the primary action — not "fix," "implement," or "update" — is a positive indicator.)
+   - CONVERGE iter 2 exclusion list is mechanically correct (cross-check EVERY iter 2 agent slot against the exclusion list — do not trust the plan's claim without verifying each slot)
+   - CONVERGE: every DISCOVER/REVIEW stage declares a CEILING (ONCE default / LOOP rare) — a missing or explicitly-"NONE" ceiling is a stale reference to the removed NONE variant. Iterations fire only on the mechanical trigger (≥1 CONFIRMED HIGH/CRITICAL in the prior VERIFY synthesis grid); the organizer does NOT require or forbid iterations based on task type (audit/production check) or codebase cleanliness.
     - No sequential stages that could be merged (N+1 does not consume N's verified output)
    - Domain breadth counts source-code specialists only. "Few" requires 2+ different technology stacks (e.g., python-pro + cpp-pro). Flag "few" on single-language projects as mechanical violation (test-automator is an audit lens, not a separate domain).
-    - RESEARCH agent count matches External Reference Inventory row count. If RESEARCH has fewer agents than table rows, add the missing agents mechanically — the inventory is authoritative.
-    - **Inventory completeness check.** If total source LOC > 5,000 and the inventory has ≤3 rows, cross-check against the project's runtime dependencies (pyproject.toml, requirements.txt, Gemfile, go.mod, Cargo.toml) and README for named formats/standards/libraries. Add any missing references mechanically to the inventory — named dependencies and format standards discovered during this cross-check each get a research agent. This check runs regardless of whether the row count matches. Flag any additions in the report so the lead is aware.
+    - RESEARCH agent count matches the number of External Reference Inventory rows that PASS the precision criterion (verification requires external documentation the domain specialist lacks). RESEARCH may be smaller than the row count when rows are documented SKIPs (e.g., standard usage of a generic well-documented library). Verify every SKIP row has a one-line reason; flag missing reasons mechanically — the precision criterion is authoritative, not raw row count.
+    - **Inventory completeness check.** If total source LOC > 5,000 and the inventory has ≤3 rows, cross-check against the project's runtime dependencies (pyproject.toml, requirements.txt, Gemfile, go.mod, Cargo.toml) and README for named formats/standards/libraries. Add any missing references mechanically to the inventory — named dependencies and format standards discovered during this cross-check each become a candidate row. Each candidate gets a research agent only if it passes the precision criterion; standard-usage library rows are documented skips with a one-line reason. This check runs regardless of whether the row count matches. Flag any additions in the report so the lead is aware.
    - Severity score matches Q1-Q5 answers: count the YES answers declared in the plan's Severity Justification. If the declared severity label does not match the mechanical score computed from those answers, flag as mechanical violation.
    - Q5 evidence check: read the planner's Q5 evidence line. If it describes creating NEW output from unchanged inputs (e.g., "writes files from in-memory data," "creates new files on disk") but declares Q5=YES, flag as mechanical violation. The severity rules state: "Creating NEW state from unchanged inputs → Q5=NO."
-   - Spot-check the volume-splitter's audit table for obvious errors (e.g., a 3,000 LOC domain marked "PASS"). Flag if found; mechanical splits are the splitter's domain.
+   - Spot-check the volume-splitter's audit table for obvious errors (e.g., a 5,000 LOC domain marked "PASS"). Flag if found; mechanical splits are the splitter's domain.
 4. **Report** — write to `tmp/s0-organize-report.md`:
    a. MUST ANSWER question redistributions applied (which questions moved, new questions written)
    b. Mechanical fixes applied (exclusion-list violations, missing stages, stale agent names)
@@ -58,7 +58,7 @@ Mechanical violations — **FIX** directly in the plan:
 - **Missing intersection agents** — ALWAYS/DEFAULT boundary with no intersection agent in DISCOVER. Scope boundaries from volume splits are boundaries — single-domain size=large projects with format-transformation scope pairs require intersection agents.
 - **Exclusion-list violation** — CONVERGE iter 2 agent uses `.md` file from iter 1. Cross-check EVERY slot. Applies to DISCOVER, REVIEW, and RESEARCH iterations.
 - **Missing second opinions** — domain at MEDIUM+ severity without a second opinion agent.
-- **Audit task with CONVERGE=NONE** — DISCOVER or REVIEW stage on an audit, production-check, or security-review task has CONVERGE set to NONE. The task's purpose IS comprehensive discovery; a single-pass specialist cannot achieve that. Change to ONCE mechanically (the planner chooses ONCE vs LOOP in the next layer).
+- **Stale CONVERGE=NONE reference** — a DISCOVER or REVIEW stage still declares the removed NONE variant instead of a ceiling. Change to ONCE mechanically (firing is decided by the VERIFY synthesis-grid trigger, not by the plan).
 
 Judgment flags — **FLAG** but do NOT modify (lead decides):
 
@@ -68,7 +68,7 @@ Judgment flags — **FLAG** but do NOT modify (lead decides):
 
 Not the organizer's role — do NOT flag these:
 
-- CONVERGE variant choice between ONCE and LOOP (planner picks based on ambiguity, coupling, criticality; lead reviews). The organizer DOES mechanically verify that CONVERGE is not set to NONE on audit/production-check/security-review tasks — NONE on a task whose purpose IS comprehensive discovery is a structural violation, not a judgment call. (See mechanical violations list above.)
+- CONVERGE ceiling choice between ONCE and LOOP (planner picks based on ambiguity, coupling, criticality; lead reviews). The organizer DOES mechanically verify that every DISCOVER/REVIEW stage declares a ceiling and that no stage references the removed NONE variant — a missing ceiling or stale NONE reference is a structural violation, not a judgment call. (See mechanical violations list above.)
 - Severity classification judgment (Q-is-this-a-write? = YES/NO — planner decides; lead reviews). The organizer mechanically verifies that declared score matches the count of YES answers — mismatched math is a mechanical violation.
 - Boundary tier classification (planner assesses via counted call sites; lead reviews)
 - Volume split/merge decisions (splitter decides mechanically; lead reviews volume audit)
