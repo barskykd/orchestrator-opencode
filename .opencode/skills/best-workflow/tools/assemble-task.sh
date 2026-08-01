@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# assemble-prompt.sh — Compose an agent prompt from agent .md + templates + task content
+# assemble-task.sh — Compose an agent prompt from agent .md + templates + task content
 #
 # Cross-platform (Windows Git Bash + macOS/Linux). Handles mechanical assembly
 # so the lead only writes the task-specific parts (TASK ASSIGNMENT block).
@@ -8,7 +8,7 @@
 # appends the lead's task file, and writes the complete prompt to tmp/.
 #
 # Usage:
-#   assemble-prompt.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
+#   assemble-task.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
 #
 # Arguments:
 #   -a, --agent       Agent name — reads <best-workflow folder>/agents/{agent}.md
@@ -28,10 +28,10 @@
 #
 # Examples:
 #   # Review — single task file (reviewers are read-only)
-#   assemble-prompt.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
+#   assemble-task.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
 #
 #   # Code implementation — writes directly to original files
-#   assemble-prompt.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
+#   assemble-task.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
 
 set -euo pipefail
 

@@ -28,16 +28,16 @@ You do NOT re-assess severity, re-classify boundaries, re-select agents, or modi
    - Run `find` for module directories
    - Run `test -f` on every resolved path to verify it exists
    - Run `wc -l` for exact LOC counts on every file
-3. **Build the volume audit table** — produce a systematic table comparing every domain's exact files and LOC against the 1.2K/10f baseline and the 1.5K/15f narrow cap. Include verdict for each domain.
+3. **Build the volume audit table** — produce a systematic table comparing every domain's exact files and LOC against the 3K/10f baseline and the 3.5K/15f narrow cap. Include verdict for each domain.
 4. **Apply mechanical volume-split rules** — using exact counts from step 3:
-   - LOC ≤ 1200 AND files ≤ 10 → **DO NOT SPLIT.**
-   - LOC > 1500 OR files > 15 → **MUST SPLIT** (no exceptions — "cohesive code" does not override exceeding the caps).
-   - 1201 ≤ LOC ≤ 1500 OR 11 ≤ files ≤ 15 → **SPLIT UNLESS:** (a) all files form a single cohesive module, AND (b) no individual file exceeds 200 LOC. If both conditions hold → DO NOT SPLIT (with one-line justification). Otherwise → SPLIT.
+   - LOC ≤ 3000 AND files ≤ 10 → **DO NOT SPLIT.**
+   - LOC > 3500 OR files > 15 → **MUST SPLIT** (no exceptions — "cohesive code" does not override exceeding the caps).
+   - 3001 ≤ LOC ≤ 3500 OR 11 ≤ files ≤ 15 → **SPLIT UNLESS:** (a) all files form a single cohesive module, AND (b) no individual file exceeds 200 LOC. If both conditions hold → DO NOT SPLIT (with one-line justification). Otherwise → SPLIT.
    - After splitting each domain: re-count to verify no resulting sub-agent exceeds the limits.
 5. **Apply merge-back** — after all splits, verify each resulting sub-agent is not fragmented:
-   - If any sub-agent has fewer than 5 files AND fewer than 500 LOC → merge sub-agents back into the parent domain. Accept the parent as within the narrow cap.
-   - A 10f/800-LOC agent is better than two 5f/400-LOC agents with almost nothing to audit.
-   - When file count exceeds the 15f cap but total LOC is under 500, the files are likely thin stubs — accept as a close call rather than splitting into fragments.
+   - If any sub-agent has fewer than 5 files AND fewer than 1200 LOC → merge sub-agents back into the parent domain. Accept the parent as within the narrow cap.
+   - A 10f/2,000-LOC agent is better than two 5f/1,000-LOC agents with almost nothing to audit.
+   - When file count exceeds the 15f cap but total LOC is under 1000, the files are likely thin stubs — accept as a close call rather than splitting into fragments.
 6. **Rewrite the plan in-place** — for each domain agent:
    - Replace the planner's FILE SCOPES with resolved KEY FILES (exact file paths) and exact wc -l LOC counts
    - Preserve the planner's: MUST ANSWER questions, domain descriptions, agent assignments, second opinion pairings, intersection agent assignments, and scope overlap instructions
@@ -55,16 +55,16 @@ You do NOT re-assess severity, re-classify boundaries, re-select agents, or modi
 8. **Correct size classification** — the planner's declared size may be wrong. Verify mechanically:
     - Read the declared size from the plan's classification table.
     - Count total source files and source LOC from the volume audit.
-    - If source LOC > 1,500 OR source files > 15 → override to large.
-    - If source LOC 1201-1500 OR source files 11-15 → override to medium.
-    - If source LOC ≤ 1,200 AND source files ≤ 10 → no change needed.
+    - If source LOC > 3,500 OR source files > 15 → override to large.
+    - If source LOC 3001-3500 OR source files 11-15 → override to medium.
+    - If source LOC ≤ 3,000 AND source files ≤ 10 → no change needed.
     - Document the correction (or confirmation) in the volume audit report.
 
 ## Split Strategy
 
 When splitting a domain, prefer these strategies in order:
 1. **Module/concern boundaries** — if a domain contains files from different logical modules, split along those boundaries (e.g., "auth" vs "data" modules)
-2. **In-file boundaries** — for single large files (>1,500 LOC, or narrow-cap where (b) fails):
+2. **In-file boundaries** — for single large files (>3,500 LOC, or narrow-cap where (b) fails):
    a. **Find a natural semantic boundary near the midpoint first** — read the file around the target split line. Look for the nearest logical break that produces coherent halves: a function/method/class start, a section comment header, a test class boundary, a major block delimiter. Do NOT split mid-function or mid-block. The exact boundary type varies by language and file — think "what would make the two halves independently understandable." Shift the split point up or down to the closest such boundary (within ±20% of the midpoint; if none exists, fall back).
    b. **Fall back to approximate midpoint** — only if no natural boundary exists within ±20% of the midpoint (e.g., flat dictionary data, generated code with no structure, single monolithic function that IS the file). Document that midpoint was used and why no natural boundary could be found.
 3. **Directory boundaries** — split by subdirectory when the overall scope spans multiple directories
