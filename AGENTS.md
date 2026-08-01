@@ -20,7 +20,7 @@ The sections below are identical across all repositories that use this workflow 
 You can use the `tmp/` subfolder in the current project folder to save any temporary files if needed.
 This is useful for storing intermediate results, reports, or data during multi-step workflows.
 
-**Path resolution:** All `tmp/` paths in workflow instructions resolve to `$REPO_ROOT/tmp/` where `$REPO_ROOT` is the absolute path to the repository root (the directory where `opencode` was launched). The tool scripts (`assemble-prompt.sh`, `spawn-glm.sh`, `wait-glm.sh`, `glm-recover.sh`) compute `REPO_ROOT` and use absolute `${REPO_ROOT}/tmp/` paths so that agent reports, logs, and artifacts are always written to the correct location regardless of each agent's working directory or the project under inspection. When writing task files or instructions for agents, always reference `tmp/` paths relative to `$REPO_ROOT`.
+**Path resolution:** All `tmp/` paths in workflow instructions resolve to `$REPO_ROOT/tmp/` where `$REPO_ROOT` is the absolute path to the repository root (the directory where `opencode` was launched). The tool scripts (`assemble-task.sh`, `glm-recover.sh`) compute `REPO_ROOT` and use absolute `${REPO_ROOT}/tmp/` paths so that agent reports, logs, and artifacts are always written to the correct location regardless of each agent's working directory or the project under inspection. When writing task files or instructions for agents, always reference `tmp/` paths relative to `$REPO_ROOT`.
 
 ---
 
@@ -143,7 +143,7 @@ Dependencies handled automatically via uv.
 
 Dynamic orchestration where the lead delegates everything to specialized agents. The planner researches the project, classifies the task, and dynamically assembles a custom workflow from available bricks — selecting only the stages the task actually needs. The lead spawns agents according to the manifest, coordinates verification, and delivers results. **Automatic by default.**
 
-The ONLY agent-delegation pipeline is `assemble-prompt.sh` → `spawn-glm.sh` → `wait-glm.sh`. The `Task` tool's `subagent_type` parameter is forbidden — see Rules → Task tool prohibition for the full statement.
+The ONLY agent-delegation mechanism is the opencode `task` tool. The lead assembles a task prompt with `assemble-task.sh`, then calls the `task` tool with `subagent_type` set to the agent name from `.opencode/agents/`. All 112 agents are native opencode subagents, auto-loaded from `.opencode/agents/*.md`. Agents run as in-process child sessions with full permissions inherited from the project config.
 
 ### Agent Loading Rules
 
@@ -152,12 +152,12 @@ Agents folder: `.opencode/agents/`. Use agents for all non-trivial subtasks — 
 **Rules:**
 - Before any subtask: select the best agent and read its `.md` file (always fresh re-read)
 - Load ONE agent at a time (Exception: Orchestration Workflow may read multiple for prompt building)
-- All agent delegation goes through `spawn-glm.sh` — see Rules → Task tool prohibition
+- All agent delegation goes through the `task` tool — see Tools → Agent Spawning
 - Agent instructions are TEMPORARY — apply to current subtask only, discard after
 
 **Discovery:** Glob `.opencode/agents/*.md` to list, Grep by keyword. Prefer specialized over general agents.
 
-**How the lead uses agents:** The lead selects agents by name from the INDEX, writes task files with KEY FILES and MUST ANSWER questions, and uses `assemble-prompt.sh` to inject the agent's `.md` into the spawned agent's prompt. The lead does NOT load agent `.md` content into its own working context and never applies agent instructions itself. The agent `.md` is read for agent selection (which specialist?), not for the lead to execute. Agent `.md` files reach agents exclusively through `assemble-prompt.sh` → `spawn-glm.sh`.
+**How the lead uses agents:** The lead selects agents by name from the INDEX, writes task files with KEY FILES and MUST ANSWER questions, and uses `assemble-task.sh` to build the task prompt (the agent's `.md` is auto-loaded by opencode as the subagent's system prompt). The lead does NOT load agent `.md` content into its own working context and never applies agent instructions itself. The agent `.md` is read for agent selection (which specialist?), not for the lead to execute. Agent `.md` files reach agents natively — opencode loads them for the `task` tool's `subagent_type`.
 
 ### Request Workflow
 
@@ -169,9 +169,9 @@ Agents folder: `.opencode/agents/`. Use agents for all non-trivial subtasks — 
    **Do NOT read source files, skim the project, or try to understand scope before spawning.** The planner is your research — spawn it immediately. Fill in the project path, spawn, and let the planner do everything else. Any attempt to "understand the codebase first" IS the research we forbid. Go directly to step 3.
 
 3. **Planning phase (3 batches, 3 agents) — ALWAYS run, never skipped:**
-   a. **Initial planner:** Copy `.opencode/templates/planner-task-template.txt`, fill in the project path (just the working directory — the planner researches the codebase itself), assemble with `assemble-prompt.sh -a agentic-planner -t research -n s0-planner`, spawn (no `-m`, uses default model). Researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, type), selects bricks from the palette, and produces a custom workflow manifest with FILE SCOPES to `tmp/glm-plan.md`.
-   b. **Volume splitter (ALL plans):** Create a task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering splits, merge-backs, and path verification. Include `WRITABLE FILES: tmp/glm-plan.md` in the task file. Assemble with `assemble-prompt.sh -a volume-splitter -t code -n s0-volume`, spawn (no `-m`, default model). The volume-splitter resolves FILE SCOPES to exact KEY FILES with `wc -l` counts, applies mechanical split/merge rules, builds the volume audit table, rewrites the plan in-place, and writes `tmp/s0-volume-report.md`.
-   c. **Mandatory plan review (ALL plans):** Create a review task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering brick selection, severity classification, agent assignment, verification placement, convergence decisions, and dependency analysis. Include `WRITABLE FILES: tmp/glm-plan.md` in the task file. Assemble with `assemble-prompt.sh -a agent-organizer -t review -n s0-organize`, spawn (no `-m`, default model). The agent-organizer reviews the plan using its structural analytical framework (the volume-splitter has already resolved KEY FILES and applied mechanical splits):
+   a. **Initial planner:** Copy `.opencode/templates/planner-task-template.txt`, fill in the project path (just the working directory — the planner researches the codebase itself), assemble with `assemble-task.sh -a agentic-planner -t research -n s0-planner`, then delegate via the `task` tool (subagent_type `agentic-planner`, prompt = assembled file). Researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, type), selects bricks from the palette, and produces a custom workflow manifest with FILE SCOPES to `tmp/glm-plan.md`.
+   b. **Volume splitter (ALL plans):** Create a task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering splits, merge-backs, and path verification. Include `WRITABLE FILES: tmp/glm-plan.md` in the task file. Assemble with `assemble-task.sh -a volume-splitter -t code -n s0-volume`, then delegate via the `task` tool (subagent_type `volume-splitter`). The volume-splitter resolves FILE SCOPES to exact KEY FILES with `wc -l` counts, applies mechanical split/merge rules, builds the volume audit table, rewrites the plan in-place, and writes `tmp/s0-volume-report.md`.
+   c. **Mandatory plan review (ALL plans):** Create a review task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering brick selection, severity classification, agent assignment, verification placement, convergence decisions, and dependency analysis. Include `WRITABLE FILES: tmp/glm-plan.md` in the task file. Assemble with `assemble-task.sh -a agent-organizer -t review -n s0-organize`, then delegate via the `task` tool (subagent_type `agent-organizer`). The agent-organizer reviews the plan using its structural analytical framework (the volume-splitter has already resolved KEY FILES and applied mechanical splits):
 
        *MUST ANSWER redistribution:* When the volume-splitter created sub-agents, the original MUST ANSWER questions were copied verbatim. The organizer redistributes them — assigning each question to the sub-agent whose scope covers the relevant code, writing new scoped questions when needed.
 
@@ -189,13 +189,13 @@ Agents folder: `.opencode/agents/`. Use agents for all non-trivial subtasks — 
 
 The lead's role in each subtask:
 1. Select the best agent, read its `.md`, prepare the task file using the planner's KEY FILES and MUST ANSWER questions from the manifest. For DISCOVER agents that follow a RESEARCH stage: copy the research report's `## Discovery Questions` section verbatim into the YOUR TASK section — the research agent wrote them, the lead transports them untouched.
-2. Assemble the prompt via `assemble-prompt.sh`, spawn the agent via `spawn-glm.sh`
-3. Wait for completion, check operational status (was the report produced? no STALLED/EMPTY/MISSING?)
+2. Assemble the task prompt via `assemble-task.sh`, delegate via the `task` tool (subagent_type = agent name)
+3. Wait for the task tool result, check operational status (was the report produced? no EMPTY/MISSING?)
 4. Delegate ALL substantive verification to the verification pipeline — the lead never evaluates output quality, judges findings, or assesses results
 5. Save non-trivial discoveries to knowledge
 6. Discard agent instructions, move to next subtask
 
-**Mid-execution research:** When something is unclear during workflow execution (scope ambiguity, technical approach, a specific question the plan didn't cover), the lead may spawn a single unplanned agent using the default model to research that question. The lead chooses the exact agent for the job (e.g. `debugger`, `research-analyst`), prepares a prompt with the specific question and MUST ANSWER directives, and spawns via `spawn-glm.sh`. Use the agent's report to clarify the next action. This is an ad-hoc clarifying agent — NOT a replacement for the planner pipeline, not a way to re-do planning, not a substitute for discovery stages. Limit to one agent per question. Do NOT use this to research things the lead could discover by reading source code — the lead does not read source code.
+**Mid-execution research:** When something is unclear during workflow execution (scope ambiguity, technical approach, a specific question the plan didn't cover), the lead may spawn a single unplanned agent using the default model to research that question. The lead chooses the exact agent for the job (e.g. `debugger`, `research-analyst`), prepares a prompt with the specific question and MUST ANSWER directives, and delegates via the `task` tool. Use the agent's report to clarify the next action. This is an ad-hoc clarifying agent — NOT a replacement for the planner pipeline, not a way to re-do planning, not a substitute for discovery stages. Limit to one agent per question. Do NOT use this to research things the lead could discover by reading source code — the lead does not read source code.
 
 ### When to Delegate
 
@@ -230,7 +230,7 @@ The lead is an **autonomous orchestrator**, not a developer doing hands-on work.
 - The lead NEVER writes, edits, or modifies any project source file. The Edit and Write tools are for task files, prompts, and synthesis reports in tmp/ only. Any code change — even a single-line fix, a config tweak, or a build script adjustment — must go through a spawned agent.
 - Heavy Read/Grep usage for verification coordination is expected and allowed (reading agent reports, building task files from synthesis output). For anything resembling planning or codebase research — never. Delegate to the planner pipeline immediately. Reading source files to understand the codebase is planner-agent work, not lead work.
 - If a specialized agent in `.opencode/agents/INDEX.md` matches the subtask domain → **SPAWN it.** Don't reproduce its work yourself
-- If the subtask requires writing code, running test suites, or deep analysis across many files → that's agent work. Delegate it via `spawn-glm.sh` (see Rules → Task tool prohibition for the absolute rule)
+- If the subtask requires writing code, running test suites, or deep analysis across many files → that's agent work. Delegate it via the `task` tool (see Tools → Agent Spawning)
 
 **Rule compliance — the lead NEVER:**
 - Reclassifies or downgrades an agent's severity finding to avoid running a mandatory verification stage. The reviewer's filed severity is authoritative.
@@ -294,11 +294,15 @@ Lead coordinates batches, never investigates findings manually, and writes the f
 
 **Spawn:**
 ```bash
-.opencode/tools/spawn-glm.sh -n NAME -f PROMPT_FILE [-m MODEL]
+.opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task tmp/{NAME}-task.txt
 ```
-`-m` is optional — when omitted, the agent uses opencode's configured default model. Use `-m MODEL` to override with a specific model. Returns `SPAWNED|name|pid|log_file`. Backgrounds immediately. Report: `tmp/{NAME}-report.md`, log: `tmp/{NAME}-log.txt`. Also writes to `tmp/{NAME}-status.txt` (reliable on Windows — stdout can be lost when parallel `.cmd` processes launch).
+Produces `tmp/{NAME}-task-prompt.txt` (templates + TASK ASSIGNMENT + WRITABLE FILES directive; the agent `.md` is auto-loaded by opencode). Then delegate via the `task` tool:
+```bash
+task(description="<3-5 words>", prompt="<full content of tmp/{NAME}-task-prompt.txt>", subagent_type="<AGENT>")
+```
+The `task` tool runs the agent as a native opencode subagent (isolated child session, full project permissions). It blocks until the subagent completes and returns only its final summary to the lead. Report: `tmp/{NAME}-report.md` (the subagent writes it). Agents use the opencode default model unless the agent `.md` sets `model:`.
 
-**Stage types and model usage** — all agents use the opencode default model unless overridden with `-m`. The `-m` flag is available for any stage type when a specific model is needed.
+**Stage types and model usage** — all agents use the opencode default model unless their `.md` sets `model:`. To pin a subagent to a different model than the lead, add `model: provider/model-id` to the agent `.md` frontmatter (e.g. `model: deepseek/deepseek-v4-flash`); without it, the subagent inherits the invoking lead's model.
 
 | Stage Type | Description |
 |-----------|-------------|
@@ -313,10 +317,7 @@ Lead coordinates batches, never investigates findings manually, and writes the f
 | **Quick-fix** (minor finishing, reverts) | Short, informal fix for workflow-internal issues — fixing broken agent output or reverting incorrect edits. Not a substitute for the planning pipeline. No verification. If wrong, diagnose and retry once. If retry also fails: escalate to full IMPLEMENT → REVIEW → VERIFY for HIGH/CRITICAL changes; revert for everything else. |
 
 **Wait:**
-```bash
-.opencode/tools/wait-glm.sh name1:$PID1 name2:$PID2 name3:$PID3
-```
-Blocks until all finish (Bash timeout: 600000). Do NOT use bare `wait` or `sleep` + poll loops. Prefer `name:pid` format — enables progress monitoring (first at 30s, then every 60s) and STALLED detection (0-byte log after 2min). Bare PIDs still work but skip log monitoring. If Bash times out before agents finish, re-invoke with same arguments — this is normal for long-running agents. **Planner, volume-splitter, and organizer agents read many files in a single tool call, producing bursts of log growth separated by long pauses where the agent is thinking, not stuck. A Stage 0 agent showing STALLED after 2 minutes of no log growth but with healthy early activity (file reads, grep, wc -l) is not stalled — wait for the full Bash timeout. Only kill and re-spawn if the log is empty from the start or grows zero bytes for 10+ minutes.**
+The `task` tool blocks until the subagent completes — no separate wait step. For parallel batches, issue multiple `task` calls in ONE message; all run concurrently and the lead receives all results together.
 
 ### Workflow
 
@@ -888,7 +889,7 @@ Answer these explicitly in your plan. Every subtask must have an assigned agent 
 
 **Stage decomposition rule (MANDATORY):** If stage N+1 does NOT consume stage N's verified output — they're independent — MERGE them into a single stage with parallel agents. Sequential stages are only correct when the next stage actually needs the previous stage's verified findings as `PRIOR CONTEXT:`.
 
-Write full plan to `tmp/glm-plan.md`. All agents use the opencode default model. The `-m` flag on `spawn-glm.sh` is available to override when a specific model is needed. Quick-fix agents (see Lead Role) are always single-model but run outside the plan's stage structure — they handle agent output issues within an existing workflow, never as a standalone workflow replacement. Checkpoint.
+Write full plan to `tmp/glm-plan.md`. All agents use the opencode default model (or their `.md` `model:` override). Quick-fix agents (see Lead Role) are always single-model but run outside the plan's stage structure — they handle agent output issues within an existing workflow, never as a standalone workflow replacement. Checkpoint.
 
 **Dependency analysis (MANDATORY — lead's responsibility, before spawning):** Before spawning any stage, the lead builds a dependency graph of agents within that stage:
 1. For each agent, list files it will READ and files it will WRITE/CREATE
@@ -905,7 +906,7 @@ Common dependency patterns to watch: test-writer depends on implementer, fix-age
 **Session start:** Clean ALL stale workflow artifacts. Use two steps — explicit files first (shell-safe), then wildcard patterns via `find` (avoids zsh glob errors when no files match a pattern):
 
 1. `rm -f tmp/glm-plan.md`
-2. `find tmp/ -maxdepth 1 \( -name 'stage-*-synthesis.md' -o -name 'stage-*-iter-*-synthesis.md' -o -name 's[0-9]*-task.txt' -o -name 's[0-9]*-prompt.txt' -o -name 's[0-9]*-status.txt' -o -name 's[0-9]*-report.md' -o -name 'plan-review-*' \) -delete`
+2. `find tmp/ -maxdepth 1 \( -name 'stage-*-synthesis.md' -o -name 'stage-*-iter-*-synthesis.md' -o -name 's[0-9]*-task.txt' -o -name 's[0-9]*-task-prompt.txt' -o -name 's[0-9]*-report.md' -o -name 'plan-review-*' \) -delete`
 3. **Verify:** `ls tmp/` — confirm no stale workflow artifacts remain. If any survived, remove them manually before proceeding.
 
 Also clear stale session checkpoints: `echo "# Session Memory" > session.md`
@@ -922,12 +923,12 @@ For each agent in the current stage:
 
 1. Define task with KEY FILES, CONTEXT, SCOPE, `WRITABLE FILES` (code agents only — list source files agent may edit), and `MUST ANSWER:` questions (mandatory — prompts without these are invalid). MUST ANSWER questions come from two sources: (a) the planner's manifest per-stage technical questions from Phase 1 codebase research, (b) for DISCOVER agents following a RESEARCH stage, the research report's `## Discovery Questions` section, copied verbatim. The lead may add 1-2 supplementary workflow-level questions (e.g., "Was the linter run?") but does not write code-level or spec-level technical questions. For RESEARCH agents: the YOUR TASK section MUST instruct the agent to include a `## Discovery Questions` section at the end of their report with 2-5 MUST ANSWER questions for downstream DISCOVER agents, each with inline spec quotes (see RESEARCH brick catalog for the format template). This instruction is the lead's responsibility — research agents only know their domain; they don't know the downstream handoff protocol unless the task file tells them.
 2. Write the TASK ASSIGNMENT block (PROJECT, ENVIRONMENT if code, PRIOR CONTEXT if stage 2+, YOUR TASK, WRITABLE FILES) to `tmp/{name}-task.txt`. NOTE: Do NOT include the report file path in WRITABLE FILES — the script auto-injects `tmp/{NAME}-report.md` automatically.
-3. Assemble the full prompt:
+3. Assemble the task prompt:
    ```bash
-   .opencode/tools/assemble-prompt.sh -a AGENT -t TYPE -n NAME --task tmp/{name}-task.txt
+   .opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task tmp/{name}-task.txt
    ```
-    Types: `review` (coordination-review + severity + quality-rules-review), `code` (coordination-code + quality-rules-code), `research` (coordination-review + quality-rules-review). The script reads the agent .md, selects templates, substitutes `{NAME}` in the task file content, and writes `tmp/{name}-prompt.txt`. Output: `ASSEMBLED|name|path|bytes`
-4. **Validate prompt contains ALL:** full agent .md, TASK ASSIGNMENT with MUST ANSWER questions, quality rules, severity guide (review only), environment (code only), coordination, report format. The script handles all boilerplate automatically — you only own the task file. Missing ANY = do not spawn
+    Types: `review` (coordination-review + severity + quality-rules-review), `code` (coordination-code + quality-rules-code), `research` (coordination-review + quality-rules-review). The script selects templates, substitutes `{NAME}` in the task file content, and writes `tmp/{name}-task-prompt.txt`. Output: `ASSEMBLED|name|path|bytes`. The agent `.md` is NOT embedded — opencode loads it natively as the subagent's system prompt.
+4. **Validate task prompt contains ALL:** TASK ASSIGNMENT with MUST ANSWER questions, quality rules, severity guide (review only), environment (code only), coordination, report format. The script handles all boilerplate automatically — you only own the task file. The agent `.md` is auto-loaded by opencode. Missing ANY = do not spawn
 5. Match agent type to task: REVIEW → code-reviewer, security-reviewer, backend-architect. CODE → language-pro, debugger. **Git/history analysis** (blame, log, diff, tracing fixes through commits) → `debugger` or `research-analyst`
 6. **WRITABLE FILES:** Code agents: task file MUST list the exact source files/directories the agent may modify. Review/audit/research agents: omit WRITABLE FILES entirely — the script auto-injects the correct report path and marks all source files as read-only.
    - **Implementation agents:** WRITABLE FILES must list the exact source files the agent may modify directly. The task must instruct them to produce their implementation and run any available lint/test commands to verify correctness. The task MUST also instruct them to write an Intent section in their report before coding: a description of their understanding of the task and their intended approach, in their own words, at whatever level of detail they think is useful for the reviewer. The agent decides what to communicate — architectural reasoning, assumptions about the codebase, trade-offs considered, alternatives rejected, or anything else that helps someone else understand why they built what they built. This is the first thing they write, before any code.
@@ -937,10 +938,10 @@ Describe problems and desired behavior — do NOT paste exact fix code unless pr
 
 #### Agent Spawning
 
-All agents use the opencode default model. The `-m` flag is available to override when a specific model is needed but is never required.
+All agents use the opencode default model. The `-m` flag is not used — to pin a subagent to a different model than the lead, add `model: provider/model-id` to the agent `.md` frontmatter; without it, the subagent inherits the invoking lead's model.
 
 **How it works for review/research/audit stages:**
-1. A single agent gets the agent `.md` and the task assignment — it works independently
+1. A single agent gets the agent `.md` (auto-loaded) and the task assignment — it works independently
 2. When a stage has independent subtasks (different files, modules, concerns), spawn one agent per subtask in parallel — as many as the task naturally decomposes into, maximum 10 agents
 3. Each agent's report feeds into the verification pipeline (see Verification section)
 4. **Naming convention:** `sN-name`, e.g. `s1-reviewer`, `s2i1-researcher` (stage 2, iteration 1)
@@ -952,24 +953,25 @@ All agents use the opencode default model. The `-m` flag is available to overrid
 
 **Spawn:**
 ```bash
-# Single agent (uses default model)
-.opencode/tools/spawn-glm.sh -n s1-reviewer -f tmp/s1-reviewer-prompt.txt
-# Override model
-.opencode/tools/spawn-glm.sh -n s1-reviewer -f tmp/s1-reviewer-prompt.txt -m zai/glm-5.1
+# Assemble task prompt (agent .md is auto-loaded by opencode)
+.opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task tmp/{NAME}-task.txt
+# Delegate via the task tool
+task(description="<3-5 words>", prompt="<full content of tmp/{NAME}-task-prompt.txt>", subagent_type="<AGENT>")
 ```
 
-**Prompt assembly:** Assemble ONE prompt per agent via `assemble-prompt.sh`:
+**Prompt assembly:** Assemble ONE task prompt per agent via `assemble-task.sh`:
 ```bash
-.opencode/tools/assemble-prompt.sh -a AGENT -t TYPE -n NAME --task tmp/task.txt
+.opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task tmp/task.txt
 ```
-Types: `review` (coordination-review + severity + quality-rules-review), `code` (coordination-code + quality-rules-code), `research` (coordination-review + quality-rules-review).
+Types: `review` (coordination-review + severity + quality-rules-review), `code` (coordination-code + quality-rules-code), `research` (coordination-review + quality-rules-review). The agent `.md` is auto-loaded by opencode.
 
 **Implementation spawn pattern:**
 ```bash
 # Write step
-.opencode/tools/spawn-glm.sh -n sN-impl  -f tmp/sN-impl-prompt.txt
-# Review step (spawn AFTER write completes)
-.opencode/tools/spawn-glm.sh -n sN-review -f tmp/sN-review-prompt.txt
+.opencode/tools/assemble-task.sh -a python-pro -t code -n sN-impl --task tmp/sN-impl-task.txt
+# Delegate via task tool (subagent_type python-pro)
+# Review step (delegate AFTER write completes)
+.opencode/tools/assemble-task.sh -a code-reviewer -t review -n sN-review --task tmp/sN-review-task.txt
 ```
 
 **Naming convention overview:**
@@ -983,7 +985,7 @@ Types: `review` (coordination-review + severity + quality-rules-review), `code` 
 - Fix: `sN-fix-{domain}`
 - Test: `sN-test`
 - Iterations: `s{N}i{K}-name` (e.g., `s2i1-researcher`, `s2i2-researcher`)
-- Respawns: add `-r2`, `-r3` suffix when re-spawning a failed agent with corrected configuration (e.g., `s2i1-reviewer-r2` = stage 2 iteration 1 reviewer, respawn attempt 2). Maximum 3 respawn attempts per agent.
+- Respawns: re-issue the `task` call with corrected configuration. Add `-r2`, `-r3` suffix to the name when re-delegating a failed agent (e.g., `s2i1-reviewer-r2` = stage 2 iteration 1 reviewer, respawn attempt 2). Maximum 3 respawn attempts per agent.
 
 #### Second Opinion Guidelines
 
@@ -1023,12 +1025,12 @@ For REVIEW, the primary agent is typically a code-reviewer assessing implementat
 
 #### Execution
 
-1. Spawn current batch of agents via `spawn-glm.sh`, respecting the per-batch limit from Tools and the dependency analysis above. If stdout is empty (Windows `.cmd` issue), read `tmp/{NAME}-status.txt` to get PID. Checkpoint with PIDs and names. If stage has multiple batches, wait for current batch to finish before spawning next
-2. `wait-glm.sh name1:$PID1 name2:$PID2 ...` — first progress at 30s, then every 60s, STALLED warnings, health check on finish
+1. Spawn current batch of agents via the `task` tool, respecting the per-batch limit from Tools and the dependency analysis above. Issue multiple `task` calls in ONE message for parallel batches (all run concurrently). Checkpoint with agent names and task descriptions. If stage has multiple batches, wait for current batch to finish before spawning next
+2. The `task` tool blocks until each subagent completes — results return together for parallel batches
 3. Do verification prep (for VERIFY stages): read the extraction agent's output, create verification task files per batch, assemble prompts. **Batch cross-check (MANDATORY):** Before spawning, verify that every batch the extraction report prescribes has a corresponding task file, and each task file targets the exact finding IDs from the extraction's batch assignment table (e.g., ADV-1 → B1-B4). A task file for different findings than prescribed does not satisfy the batch assignment. The extraction report is authoritative — the lead does NOT substitute finding targets.
-4. **Review output.** Check operational status only — was the report produced? Is the log non-empty? Any STALLED markers? This is NOT quality review (do NOT evaluate findings, accuracy, or correctness). If ANY agent shows STALLED / EMPTY LOG / MISSING REPORT / EMPTY REPORT:
+4. **Review output.** Check operational status only — was the report produced? Is it non-empty? Any EMPTY/MISSING? This is NOT quality review (do NOT evaluate findings, accuracy, or correctness). If ANY agent produced EMPTY REPORT / MISSING REPORT / FAILED TASK:
     - Diagnose root cause. Fix the issue (environment, prompt, task file, dependencies).
-    - Re-spawn the agent with corrected configuration.
+    - Re-issue the task call with corrected configuration.
     - Do NOT proceed to the next stage with incomplete stage output.
     - Accept a gap and proceed ONLY for trivial gaps in discovery stages (e.g. a single agent in a 10-agent discovery stage failed after 3 respawn attempts with different approaches, AND its domain is partially covered by other agents). Every such decision must be explicitly justified in `tmp/glm-plan.md` with `STAGE GAP ACCEPTED: [domain] [reason] [coverage from other agents]`. Do NOT accept gaps in implementation or fix stages — those stages must produce complete, correct output. Do NOT silently skip failed agents.
 
@@ -1102,7 +1104,7 @@ Also sanity-checks severity assignments against the severity classification crit
 
    If accepted, the recommendation is included as additional input in the fix agent's task ("Apply this structural change, then fix the confirmed findings"). If rejected, or if the recommendation spans beyond the function's file, the fix proceeds with the second-opinion reviewer only — no structural change. The audit agent writes no code; the fix agent owns implementation. Recommendation-only, function-scoped, no cross-file interface changes.
 3. If scope changed from original plan, update `tmp/glm-plan.md` with actual stages and revised goals
-4. Checkpoint. Clean up: `rm -f tmp/sN-*-prompt.txt tmp/sN-*-task.txt`
+4. Checkpoint. Clean up: `rm -f tmp/sN-*-task-prompt.txt tmp/sN-*-task.txt`
 5. Next stage prompts include synthesis as `PRIOR CONTEXT:` section. PRIOR CONTEXT is a navigation aid that guides the agent to complete source artifacts — it is NOT a replacement for reading agent reports. Structure it as: (a) file paths to agent reports the downstream agent MUST read before beginning work (synthesis grid with adversarial evidence, discovery reports with cross-file analysis, Intent sections from prior implementation), (b) one-line item counts for orientation (e.g., "3 MEDIUM confirmed findings, 2 LOW noted"), (c) lead-level decisions and constraints (what scope was decided, what was explicitly excluded). Do NOT flatten cross-file analysis, call-chain traces, adversarial grep evidence, or architectural reasoning from agent reports into PRIOR CONTEXT — point to the source report and trust the agent to read it. When a downstream agent receives a finding ID (e.g., "F-03: null dereference at auth.py:42"), the agent MUST read the synthesis grid report for the full finding with adversarial evidence and the original discovery report for cross-file context. Target under 50 lines total (navigation pointers + item counts + decisions). When PRIOR CONTEXT includes research findings, include their confidence tier and instruct downstream agents to check claims against code, not trust them blindly. **When passing research findings into discovery agents:** the lead copies the research report's `## Discovery Questions` section verbatim into the discovery agent's YOUR TASK as MUST ANSWER questions — zero lead interpretation, zero summarization, zero claim extraction. The research agent is the domain expert on the specification; it writes the questions with spec text quoted inline. The lead's only responsibility is to transport them untouched from the research report to the task file. Include the research report file path in PRIOR CONTEXT for reference.
 6. Never re-do verified work unless evidence shows it was wrong
 7. Never skip a planned stage without explicitly marking it in `tmp/glm-plan.md` as `SKIPPED` with a reason. A stage is only complete when its agents have been spawned, waited, their reports processed by the verification pipeline, and findings verified — incomplete stages cannot be proceeded past, outside the narrow gap-acceptance rules in Execution step 4. PLAN stages cannot be SKIPPED for speed or token savings — only for genuine blockers (environment failure, missing files, corrupted state).
@@ -1170,7 +1172,7 @@ mechanical), time sensitivity.
 3. Lead SHOULD vary approach between iterations — different agents, focus areas, or angles — to avoid blind spots. Running identical agents repeatedly is wasteful.
 4. Lead can adjust agent count and type between iterations based on what prior iterations revealed
 5. If iteration cap hit without convergence → synthesize what's known, note "convergence not reached" in delivery, proceed
-6. **Naming:** iteration agents follow `s{N}i{K}-name` — e.g. `s2i1-reviewer`, `s2i2-researcher` (stage 2, iteration 1/2). Respawn within iteration: `s2i1-reviewer-r2`.
+6. **Naming:** iteration agents follow `s{N}i{K}-name` — e.g. `s2i1-reviewer`, `s2i2-researcher` (stage 2, iteration 1/2). Respawn within iteration: re-issue the task call with `s2i1-reviewer-r2`.
 
 **VERIFY between iterations (MANDATORY):** The plan must include a VERIFY stage
 between every pair of CONVERGE iterations. The structure is:
@@ -1203,11 +1205,11 @@ After final stage:
 - **Research/analysis:** synthesize into clear summary, preserving the research agent's confidence tier for each key finding. Do not present research findings as established facts unless they are CONFIRMED (≥2 independent sources); for LIKELY, TENTATIVE, or SPECULATIVE findings, state the tier explicitly in the delivery.
 - Write `tmp/session-summary.md`: task goal, stages executed, total agents, agent aborts/failures, iterations per iterative stage, verification stats, key decisions, phase durations (planning, preparation, execution/wait, verification, synthesis)
 - **Knowledge harvesting:** If any synthesis grid contains CONFIRMED findings, spawn a single `research-analyst` agent (default model). It reads all synthesis grids and discovery reports, classifies each CONFIRMED finding as PATTERN (the lesson generalizes beyond this fix) or INCIDENT (one-off specific fix), deduplicates against existing `knowledge.md` entries via `memory.sh search`, and for each PATTERN writes a `memory.sh add` entry (category: `gotcha` or `pattern`, tagged by domain — `numerical`, `concurrency`, `memory`, `ffi`, `io`). For each existing knowledge entry found by search, evaluate whether the current run's fix supersedes it: if yes, update or delete via `memory.sh`; if the entry references code not addressed by current findings, leave it untouched. Conservative: prefer silence over noise; never delete without clear evidence. The agent's report is written to `tmp/knowledge-harvest-report.md`. After the harvester completes, commit and push `knowledge.md` from the orchestrator's root (where `.opencode/` lives — the same `$REPO_ROOT` that `tmp/` paths resolve to) so harvested patterns survive the session. Skip the commit if `knowledge.md` is unchanged (all findings were INCIDENT with no knowledge updates).
-- Cleanup: `rm -f tmp/s[0-9]*-prompt.txt tmp/s[0-9]*-task.txt`. Keep logs, reports, summary, knowledge-harvest-report
+- Cleanup: `rm -f tmp/s[0-9]*-task-prompt.txt tmp/s[0-9]*-task.txt`. Keep logs, reports, summary, knowledge-harvest-report
 
 ### Agent Prompt Template
 
-Prompts are assembled with cache-aware ordering: stable shared content first (cached across calls), volatile per-instance content last. The assembly order:
+The task prompt (what the lead passes to the `task` tool as `prompt`) is assembled with cache-aware ordering: stable shared content first (cached across calls), volatile per-instance content last. The assembly order (performed by `assemble-task.sh`):
 
 ```
 You are a single agent working solo. Do all the work yourself — do not spawn sub-agents, do not delegate to other agents, do not run agentic workflows. Agentic workflows are not allowed in this session.
@@ -1219,8 +1221,6 @@ Before claiming something is missing or broken — grep for existing guards, han
 {cat .opencode/templates/severity-guide.txt — REVIEW/audit tasks only}
 
 {cat .opencode/templates/quality-rules-review.txt OR quality-rules-code.txt}
-
-{Full .opencode/agents/{agent}.md — see Rules → Prompts}
 
 You are an AI agent named {NAME}.
 
@@ -1239,13 +1239,15 @@ YOUR TASK: {KEY FILES, CONTEXT, SCOPE, MUST ANSWER questions}
 WRITABLE FILES: {code agents only — list source files agent may edit. Review/research/audit agents: omit this section}
 ```
 
+The agent's `.md` is NOT embedded in the task prompt — opencode auto-loads it as the subagent's system prompt when the lead calls the `task` tool with `subagent_type`.
+
 | Task Type | Coordination | Severity Guide | Quality Rules |
 |-----------|--------------|----------------|---------------|
 | Review/audit | coordination-review.txt | severity-guide.txt | quality-rules-review.txt |
 | Code/refactor | coordination-code.txt | — | quality-rules-code.txt |
 | Research | coordination-review.txt | — | quality-rules-review.txt |
 
-Boilerplate templates live in `.opencode/templates/`. Lead only writes the unique parts (agent .md selection + TASK ASSIGNMENT). Templates are `cat`-ed into the prompt file verbatim.
+Boilerplate templates live in `.opencode/templates/` and are `cat`-ed by `assemble-task.sh` into the task prompt verbatim. The lead only writes the unique parts (TASK ASSIGNMENT). The agent `.md` is auto-loaded by opencode.
 
 ### Checkpoints & Recovery
 
@@ -1276,8 +1278,8 @@ Do not rely on continuation summary alone. Do not skip the AGENTS.md re-read —
 | Checkpoint | Recovery |
 |-----------|----------|
 | Plan done | Read `tmp/glm-plan.md` → prepare agents |
-| Agents prepared | List prompts → spawn |
-| Agents spawned | Check PIDs/reports → verify or re-wait |
+| Agents prepared | Assemble task prompts → delegate via task tool |
+| Agents spawned | Check task results/reports → verify or re-delegate |
 | Verifying stage N | Read `tmp/stage-N-synthesis.md` — the lead's synthesis from the synthesis agent's grid |
 | Iterating stage N, iter K | Read `tmp/stage-N-iter-K-synthesis.md` + cumulative context → prepare next iteration |
 | Stage N done | Read synthesis + plan → next stage |
@@ -1313,16 +1315,14 @@ For tasks exceeding a single session:
 
 | Scenario | Action |
 |----------|--------|
-| No report after exit | Read log to diagnose failure. Fix root cause (bad prompt? missing dependency? environment?). Re-spawn the agent. Do NOT fill gaps yourself — filling gaps is agent work. |
-| STALLED (flagged by wait-glm.sh) — planner, volume-splitter, or organizer | Do NOT kill. Read the log: if early activity exists (file reads, grep, wc -l), the agent is reading files in bursts — wait for the full Bash timeout. Stage 0 agents on large projects legitimately spend 5-10 minutes between visible tool calls. Only kill if zero bytes for 10+ minutes. |
-| STALLED (flagged by wait-glm.sh) — other agent types | Kill process, read log to diagnose. Fix root cause. Re-spawn. Do NOT note gap and proceed. |
-| Agent claims success but output wrong | Diagnose why output is wrong (bad prompt? misunderstood task?). Fix the prompt/task. Re-spawn the agent. Do NOT verify or fix the output yourself. |
+| No report after exit | Diagnose failure from the task result / missing report. Fix root cause (bad prompt? missing dependency? environment?). Re-issue the task call. Do NOT fill gaps yourself — filling gaps is agent work. |
+| Agent claims success but output wrong | Diagnose why output is wrong (bad prompt? misunderstood task?). Fix the prompt/task. Re-issue the task call. Do NOT verify or fix the output yourself. |
 | Incorrect edits | Diagnose why the agent produced wrong output (bad prompt? misunderstood task?). Fix the prompt/task. Spawn a quick-fix agent to revert and rewrite. Do NOT revert changes yourself. If the quick-fix agent is still wrong, diagnose the issue and retry once with corrected configuration. If the retry also fails: for HIGH/CRITICAL-adjacent changes, escalate to full IMPLEMENT → REVIEW → VERIFY; otherwise (LOW/MEDIUM or workflow-internal clutter), spawn a quick-fix agent to revert the change entirely — better to ship clean than to ship a broken fix. No direct work — the lead never edits project code. Quick-fix agents are the only exception to "every review must be verified." |
 | 2+ agents fail same env error | STOP respawning. Diagnose environment first (do NOT fix environment issues directly — spawn an agent if changes needed) |
-| Agent aborted (same error 3×) | Read log to diagnose root cause, fix environment/config (spawn an agent if code/config changes needed), then respawn |
-| Stage partially failed (1+ agents produced no useful output or wrong output) | Diagnose root causes across all failed agents. Fix issues (environment, prompts, tasks). Re-spawn ALL failed agents. The stage is incomplete until all agents succeed. Do NOT proceed to the next stage with gaps. |
+| Agent aborted (same error 3×) | Diagnose root cause from task result, fix environment/config (spawn an agent if code/config changes needed), then re-issue the task call |
+| Stage partially failed (1+ agents produced no useful output or wrong output) | Diagnose root causes across all failed agents. Fix issues (environment, prompts, tasks). Re-issue ALL failed task calls. The stage is incomplete until all agents succeed. Do NOT proceed to the next stage with gaps. |
 | Iteration cap hit without convergence | Synthesize all iterations, note "convergence not reached" in delivery, proceed |
-| Adversarial verification produces suspicious results (CONFIRMED on obviously-wrong findings or REJECTED with weak evidence) | Diagnose prompt/task quality — adversarial agent may have misunderstood its role. Adjust MUST ANSWER questions or adversarial instructions and respawn. |
+| Adversarial verification produces suspicious results (CONFIRMED on obviously-wrong findings or REJECTED with weak evidence) | Diagnose prompt/task quality — adversarial agent may have misunderstood its role. Adjust MUST ANSWER questions or adversarial instructions and re-issue. |
 
 ### Rules
 
@@ -1330,18 +1330,14 @@ For tasks exceeding a single session:
 
 **Limits:** Per-batch limit and agent parallelism rules are defined in Tools and Agent Spawning — don't restate. Need more coverage than the 10-agent per-batch cap allows? Add stages, not more agents per batch. Agents run until done (no turn limit). One task per agent. Respawn naming: `-r2`, `-r3`. No two agents edit same file within a stage (read overlap OK). Balance workload — each agent should cover roughly equal scope.
 
-**Task tool prohibition (MANDATORY — single most important rule):** Agent delegation in this project happens ONLY via `spawn-glm.sh`. The `Task` tool with its `subagent_type` parameter is FORBIDDEN — never call it, regardless of the use case (exploration, code review, implementation, research, anything).
-
-The Task tool's built-in `subagent_type` list happens to share names with our agent `.md` files in `.opencode/agents/` (`code-reviewer`, `ios-pro`, `swift-pro`, etc.) — these are TWO DIFFERENT THINGS. The Task tool ships a separate sub-agent runtime that bypasses our agent delegation system, the `spawn-glm.sh` pipeline, verification, report formats, and quality rules. Our agent `.md` files are reached ONLY by passing `-a AGENT_NAME` to `assemble-prompt.sh` and then spawning via `spawn-glm.sh`.
-
-If you catch yourself about to call `Task(subagent_type=...)` — stop, use `spawn-glm.sh` instead.
+**Task tool (MANDATORY):** Agent delegation in this project happens ONLY via the opencode `task` tool. All 112 agents in `.opencode/agents/` are native subagents, auto-loaded by opencode. The lead assembles a task prompt with `assemble-task.sh`, then delegates via the `task` tool with `subagent_type` set to the agent name. Agents run as isolated child sessions with full project permissions. The lead never uses `opencode run` to spawn workflow agents.
 
 **Agent count per stage (MANDATORY — fill capacity by task decomposition):** Decompose the task into as many independent subtasks as it naturally splits into, spawn one agent per subtask, maximum 10 agents per batch. Default to what the task genuinely requires — scale to scope. Under-splitting agents creates a detection ceiling where agents can read but not deeply analyze cross-file contracts, producing fewer findings. The 10-agent-per-batch limit is a coordination constraint, not a quality limit. Verification stages scale with findings count and impact surface, not discovery agent count — minimum 1 extraction agent for every stage; adversarial agents run only if extraction finds at least one finding to falsify. When in doubt, decompose into more parallel agents — broader coverage finds more issues. **Never run sequential single-agent stages when those stages could be a single stage with parallel agents (see Workflow → Planning → Stage decomposition rule).**
 
-**Prompts:** Include the FULL agent `.md` file — agents are optimized and every section earns its place. Do NOT trim or skip sections. Boilerplate (quality rules, severity guide, coordination, report format) comes from `.opencode/templates/` and is prepended before the agent .md for prompt-cache stability (stable shared content cached first, volatile content last). Agents don't load AGENTS.md — all context must be in prompt.
+**Prompts:** The lead's task file (PROJECT, ENVIRONMENT, PRIOR CONTEXT, YOUR TASK, WRITABLE FILES, MUST ANSWER) is assembled by `assemble-task.sh` with the coordination/quality/severity templates into the task prompt passed to the `task` tool. The agent `.md` is auto-loaded by opencode as the subagent's system prompt — the lead does not embed or read the full agent `.md` into its own context. All per-task context must be in the task prompt — AGENTS.md is loaded natively by the platform into every session (lead and subagents alike), so do NOT rely on it as the agent's operating manual for task specifics.
 
 **Verification:** Every finding labeled. Every label backed by Read. 100% complete before proceeding. ALL verified actionable findings fixed via fix-agent — the lead does not fix findings directly.
 
 **Lead code prohibition (MANDATORY):** The lead never writes, edits, or modifies project source code. Every code change — implementation, bug fixes, config adjustments, script changes, one-liners — goes through a spawned agent. The lead's tools (Edit, Write) are for tmp/ artifacts only: task files, prompts, synthesis reports. The only exception is editing AGENTS.md itself (meta-configuration).
 
-**Platform:** `opencode` on all platforms (spawn-glm.sh handles invocation). Always redirect output to log files.
+**Platform:** `opencode` on all platforms. The lead operates as an opencode session (TUI or `opencode run`); workflow agents are native subagents delegated via the `task` tool.

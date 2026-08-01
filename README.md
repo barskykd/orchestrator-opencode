@@ -19,7 +19,7 @@ All agents have been tested and optimized through a rigorous methodology:
 
 **Method:** Each agent was tested in a 3-way comparison (original / polished / smart-applied) on real production codebases — not synthetic tasks.
 
-**Result:** The winning variant for each agent was selected based on objective criteria: finding accuracy, evidence quality, cross-file tracing depth, and zero false positives. Agents were compared head-to-head against OpenCode's own native subagents — **our agents won every comparison.**
+**Result:** The winning variant for each agent was selected based on objective criteria: finding accuracy, evidence quality, cross-file tracing depth, and zero false positives. Agents were compared head-to-head against generic single-agent setups — **our agents won every comparison.** Each winning persona is now loaded natively as an opencode subagent from `.opencode/agents/`.
 
 **Cognitive Mode Tags:** Each agent in the INDEX carries a Mode tag (TRACE / SWEEP / KNOW) from these tests, indicating which cognitive approach it's best at:
 
@@ -108,7 +108,7 @@ Everything runs autonomously — the lead coordinates, agents do the work, verif
 
 **Dynamic workflow** — No fixed pipeline. The planner classifies your task on 5 axes (size, domain breadth, ambiguity, severity, change type) and assembles a custom stage plan from a brick catalog (RESEARCH/DISCOVER/IMPLEMENT/REVIEW/VERIFY/CONVERGE/FIX/TEST). A cosmetic text change skips discovery and research. A critical security fix gets full adversarial verification with research on CVE context and multiple discovery passes.
 
-**Temporary files** — All agent reports, logs, and prompts go to the orchestrator's `tmp/` directory using absolute paths. The tool scripts (`assemble-prompt.sh`, `spawn-glm.sh`) compute the repository root at startup and inject absolute paths into every agent's prompt — agents always write to the correct directory regardless of which project they're inspecting. Agent `.md` files and task content use plain `tmp/` references that are auto-converted to absolute at assembly time.
+**Temporary files** — All agent reports, logs, and task prompts go to the orchestrator's `tmp/` directory using absolute paths. The tool script (`assemble-task.sh`) computes the repository root at startup and injects absolute paths into every agent's task prompt — agents always write to the correct directory regardless of which project they're inspecting. Agent `.md` files are loaded natively by opencode as subagent system prompts, and task content uses plain `tmp/` references that are auto-converted to absolute at assembly time.
 
 ## Requirements
 

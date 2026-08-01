@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
-# assemble-prompt.sh — Compose an agent prompt from agent .md + templates + task content
+# assemble-task.sh — Compose a task prompt for native opencode subagent delegation
 #
-# Cross-platform (Windows Git Bash + macOS/Linux). Handles mechanical assembly
-# so the lead only writes the task-specific parts (TASK ASSIGNMENT block).
+# Replacement for assemble-prompt.sh. Builds ONLY the task prompt (templates +
+# task assignment) — the agent .md is loaded natively by opencode as the subagent's
+# system prompt, so it is NOT embedded here.
 #
-# Reads the agent .md, selects templates for the task type, substitutes {NAME},
-# appends the lead's task file, and writes the complete prompt to tmp/.
+# The assembled task prompt is passed to the opencode `task` tool as the `prompt`
+# parameter (subagent_type = AGENT). Agents run as native opencode subagents with
+# full permissions inherited from the project config.
 #
 # Usage:
-#   .opencode/tools/assemble-prompt.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
+#   .opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
 #
 # Arguments:
-#   -a, --agent       Agent name — reads .opencode/agents/{agent}.md
+#   -a, --agent       Agent name — validates .opencode/agents/{agent}.md exists
 #   -t, --task-type   Task type: review | code | research
 #   -n, --name        Agent instance name (e.g. s1-reviewer, s2i1-impl-auth)
 #   --task            Path to task assignment file (PROJECT, ENVIRONMENT,
 #                     PRIOR CONTEXT, YOUR TASK, WRITABLE FILES — lead-written)
-#   -o, --output      Override output path (default: tmp/{name}-prompt.txt)
+#   -o, --output      Override output path (default: tmp/{name}-task-prompt.txt)
 #
-# Task type → template selection:
+# Task type → template selection (same as assemble-prompt.sh):
 #   review:   coordination-review + severity-guide + quality-rules-review
 #   code:     coordination-code   +                  quality-rules-code
 #   research: coordination-review +                  quality-rules-review
@@ -28,10 +30,10 @@
 #
 # Examples:
 #   # Review — single task file (reviewers are read-only)
-#   .opencode/tools/assemble-prompt.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
+#   .opencode/tools/assemble-task.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
 #
 #   # Code implementation — writes directly to original files
-#   .opencode/tools/assemble-prompt.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
+#   .opencode/tools/assemble-task.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
 
 set -euo pipefail
 
@@ -81,7 +83,7 @@ esac
 
 # ── Resolve input files ──
 AGENT_MD="$AGENTS_DIR/${AGENT}.md"
-[[ ! -f "$AGENT_MD" ]]   && { echo "ERROR: Agent file not found: $AGENT_MD" >&2; exit 1; }
+[[ ! -f "$AGENT_MD" ]]   && { echo "ERROR: Agent file not found: $AGENT_MD (subagent_type must match a loaded agent)" >&2; exit 1; }
 [[ ! -s "$AGENT_MD" ]]   && { echo "ERROR: Agent file is empty: $AGENT_MD" >&2; exit 1; }
 [[ ! -f "$TASK_FILE" ]]  && { echo "ERROR: Task file not found: $TASK_FILE" >&2; exit 1; }
 [[ ! -s "$TASK_FILE" ]]  && { echo "ERROR: Task file is empty: $TASK_FILE" >&2; exit 1; }
@@ -122,18 +124,16 @@ if [[ "$INCLUDE_SEVERITY" == "true" ]]; then
 fi
 
 # ── Output path ──
-[[ -z "$OUTPUT" ]] && OUTPUT="${REPO_ROOT}/tmp/${NAME}-prompt.txt"
+[[ -z "$OUTPUT" ]] && OUTPUT="${REPO_ROOT}/tmp/${NAME}-task-prompt.txt"
 OUT_DIR="$(dirname "$OUTPUT")"
 mkdir -p "$OUT_DIR"
 
-# ── Assemble prompt ──
+# ── Assemble task prompt ──
 # Cache-aware ordering: stable content first (reused across calls = cached),
 # volatile content last (per-call = uncached). Provider prompt caches match
 # on exact prefix — if byte 1 differs, the entire cache invalidates.
 {
   # ── STABLE PREFIX (shared across all calls of same type) ──
-  # Coordination headers (solo agent + grep-first rule) now live in the
-  # coordination templates themselves, not hardcoded here.
   sed "s|{NAME}|${NAME}|g" "$COORDINATION"
   printf '\n\n'
   if [[ "$INCLUDE_SEVERITY" == "true" ]]; then
@@ -141,9 +141,6 @@ mkdir -p "$OUT_DIR"
     printf '\n\n'
   fi
   cat "$QUALITY"
-  printf '\n'
-  # ── SEMI-STABLE (reused across calls using same agent type) ──
-  sed "s|[[:<:]]tmp/|${REPO_ROOT}/tmp/|g" "$AGENT_MD"
   printf '\n'
   # ── VOLATILE SUFFIX (unique per agent instance) ──
   printf 'You are an AI agent named %s.\n\n' "$NAME"
@@ -155,9 +152,13 @@ mkdir -p "$OUT_DIR"
   # Substitute {NAME}, then strip standalone report-file paths the lead wrote
   # (only lines that are sole report paths — prose references like
   # "See s1-reviewer-report.md for context" are preserved).
+  # Resolve relative tmp/ references to absolute. Idempotent: protect any
+  # pre-existing ${REPO_ROOT}/tmp/ so absolute paths are never double-prefixed.
   sed "s|{NAME}|${NAME}|g" "$TASK_FILE" \
     | sed -E '/^[[:space:]]*(-[[:space:]]*)?(tmp\/)?[a-zA-Z0-9_.-]+-report\.md[[:space:]]*$/d' \
-    | sed "s|[[:<:]]tmp/|${REPO_ROOT}/tmp/|g"
+    | sed "s|${REPO_ROOT}/tmp/|@REPO_TMP_PLACEHOLDER@|g" \
+    | sed "s|[[:<:]]tmp/|${REPO_ROOT}/tmp/|g" \
+    | sed "s|@REPO_TMP_PLACEHOLDER@|${REPO_ROOT}/tmp/|g"
   printf '\n'
   # Auto-inject the WRITABLE FILES directive. For review/research types,
   # source files are read-only. For code type, source files from the task
@@ -182,7 +183,7 @@ mkdir -p "$OUT_DIR"
 
 # ── Validate no unsubstituted template variables remain ──
 if grep -q '{NAME}' "$OUTPUT" 2>/dev/null; then
-  echo "ERROR: Unsubstituted {NAME} found in assembled prompt: $OUTPUT" >&2
+  echo "ERROR: Unsubstituted {NAME} found in assembled task prompt: $OUTPUT" >&2
   exit 1
 fi
 

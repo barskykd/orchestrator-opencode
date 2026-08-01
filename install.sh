@@ -88,7 +88,7 @@ main() {
     info "OpenCode CLI found: $(command -v opencode)"
   else
     warn "OpenCode CLI not found in PATH"
-    printf '  Agents are spawned via "spawn-glm.sh" — OpenCode must be installed.\n'
+    printf '  Agents are spawned as native opencode subagents (task tool) — OpenCode must be installed.\n'
     printf '  Install from: https://opencode.ai\n\n'
     printf '  Continue anyway? [y/N] '
     read -r answer

@@ -471,7 +471,7 @@ TEST            Run build + test suite. Single agent, default model — mechanic
 
 #### Model Assignment
 
-All agents use the opencode default model. No dual-model pairs, no model-specific roles. The `-m` flag on `spawn-glm.sh` is available to override when a specific model is needed.
+All agents use the opencode default model. No dual-model pairs, no model-specific roles. To pin a subagent to a different model than the lead, add `model: provider/model-id` to the agent `.md` frontmatter; without it, the subagent inherits the invoking lead's model.
 
 The role catalog for agent assignment is:
 - **Planner**: `agentic-planner` — full research + plan production

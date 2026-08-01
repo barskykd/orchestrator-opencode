@@ -101,7 +101,7 @@ function Main {
         Write-Info "OpenCode CLI found: $($opencodeExe.Source)"
     } else {
         Write-Warn "OpenCode CLI not found in PATH"
-        Write-Host "  Agents are spawned via 'spawn-glm.sh' - OpenCode must be installed."
+        Write-Host "  Agents are spawned as native opencode subagents (task tool) - OpenCode must be installed."
         Write-Host "  Install from: https://opencode.ai"
         Write-Host ""
         $answer = Read-Host "  Continue anyway? [y/N]"
