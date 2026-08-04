@@ -154,10 +154,13 @@ mkdir -p "$OUT_DIR"
   # "See s1-reviewer-report.md for context" are preserved).
   # Resolve relative tmp/ references to absolute. Idempotent: protect any
   # pre-existing ${REPO_ROOT}/tmp/ so absolute paths are never double-prefixed.
+  # The word-boundary equivalent (^|[^[:alnum:]_]) is pure POSIX ERE — it
+  # replaces GNU-only [[:<:]] (unsupported by MSYS/BSD sed). The , delimiter
+  # keeps the alternation | unescaped, so it is valid on GNU, BSD, and MSYS.
   sed "s|{NAME}|${NAME}|g" "$TASK_FILE" \
     | sed -E '/^[[:space:]]*(-[[:space:]]*)?(tmp\/)?[a-zA-Z0-9_.-]+-report\.md[[:space:]]*$/d' \
     | sed "s|${REPO_ROOT}/tmp/|@REPO_TMP_PLACEHOLDER@|g" \
-    | sed "s|[[:<:]]tmp/|${REPO_ROOT}/tmp/|g" \
+    | sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT}/tmp/,g" \
     | sed "s|@REPO_TMP_PLACEHOLDER@|${REPO_ROOT}/tmp/|g"
   printf '\n'
   # Auto-inject the WRITABLE FILES directive. For review/research types,
