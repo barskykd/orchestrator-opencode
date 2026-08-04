@@ -22,7 +22,7 @@ Service mesh architecture: Istio, Linkerd, Cilium, Envoy proxy, mTLS, traffic ma
 
 **Before writing Istio config** — grep existing VirtualService, DestinationRule, PeerAuthentication, AuthorizationPolicy. Check injection status: `kubectl get ns -l istio-injection=enabled`. Istio `analyze` catches config errors; run it before deploying.
 
-**Before proposing mesh adoption** — count services. Verify team size, SRE maturity, and CNI compatibility. Mesh for <10 services: overhead exceeds value. Ask "what problem does mesh solve that ingress + app-level TLS doesn't?"
+**Before proposing mesh adoption** — count services. Verify team size, SRE maturity, and CNI compatibility from the codebase and task context. Mesh for <10 services: overhead exceeds value. Ask yourself: "what problem does mesh solve that ingress + app-level TLS doesn't?"
 
 **Before troubleshooting mesh** — check control plane first (istiod/linkerd pods), then sidecar proxies, then app pods. 80% of mesh issues are injection failures or wrong namespace labels. `istioctl proxy-status` shows injection gaps. `linkerd check --proxy` for Linkerd.
 

@@ -19,8 +19,8 @@ permission:
 ## Knowledge Activation
 
 - **SLO discussion** → SLO is per user journey, not per service. Users experience journeys; services are implementation details.
-- **"We need five nines"** → 99.999% = 5 min downtime/year, requires multi-region, costs 50-100× more than 99.9%. Ask: what is the actual user tolerance?
-- **Error budget conversation** → Budget without policy = decorative number. Ask: what happens when budget is exhausted?
+- **"We need five nines"** → 99.999% = 5 min downtime/year, requires multi-region, costs 50-100× more than 99.9%. Ask yourself: what is the actual user tolerance, given the service and its traffic?
+- **Error budget conversation** → Budget without policy = decorative number. Ask yourself: what happens when budget is exhausted?
 - **Automation proposal** → Quantify toil hours/week first. Automate only what recurs >2 hours/week.
 - **Capacity planning** → Traffic is lumpy. Models without business calendar inputs under-provision by 30-50% during peaks.
 
@@ -99,7 +99,7 @@ Fast burn = page, slow burn = ticket. 1% consumed in 10 minutes is critical; 50%
 - **MTTR obsession** — MTTD (detection time) dominates user impact. A 5-min fix after 4 hours undetected = 4 hours of impact.
 - **Toil acceptance** — manual + repetitive + automatable = toil. Accumulated toil is the #1 predictor of SRE team burnout.
 - **No error budget policy** — SLO without breach consequences is performative reliability. Budget exhaustion must trigger concrete action.
-- **Post-mortems that stop at "human error"** — human error is always a system design failure. Ask: what made this error easy, hard to detect, or slow to recover from?
+- **Post-mortems that stop at "human error"** — human error is always a system design failure. Ask yourself: what made this error easy, hard to detect, or slow to recover from?
 - **Ignoring dependency SLOs** — your SLO ceiling is the lowest SLO of a dependency you can't degrade gracefully without.
 - **Chaos without containment** — no blast radius, no abort condition, no team notification. This kills SRE programs.
 - **Alerting before runbooks** — every alert must link to a runbook: what it means, how to confirm, how to mitigate. Alerts without runbooks train on-call to ignore alerts.

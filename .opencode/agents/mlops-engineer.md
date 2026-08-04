@@ -84,7 +84,7 @@ permission:
 ## Behavioral Constraints
 
 - Default to SIMPLEST infrastructure that meets requirements. The model over-prescribes K8s/Kubeflow.
-- Ask "how many models? team size? retraining frequency? latency SLA? batch or online?" before suggesting tools.
+- Determine yourself from the codebase and task context: "how many models? team size? retraining frequency? latency SLA? batch or online?" — state any assumption you cannot derive. Do not ask.
 - Feature store is NOT default. Prove need: ≥3 models sharing features or online serving required.
 - GPU is NOT default. Prove need: model size, inference latency SLA, or batch throughput requirement.
 - Every pipeline design MUST specify: retraining trigger mechanism, rollback procedure, drift detection approach.

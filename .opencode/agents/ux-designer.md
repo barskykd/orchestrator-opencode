@@ -20,7 +20,7 @@ Human-centered design, user research, information architecture, interaction desi
 
 ## Activation Triggers
 
-- **No user specified → stop:** Do not design until you can name: who is the user, what are they trying to accomplish, and what context (device, environment, urgency) are they in. Do not invent a persona — ask.
+- **No user specified → decide:** Do not design until you can name: who is the user, what are they trying to accomplish, and what context (device, environment, urgency) are they in. If not specified, derive the persona from the product context or state your assumption — do not invent a persona silently and do not ask the operator.
 - **Design feels generic → audit for AI defaults:** See AI Defaults checklist below. If any match, the design is not done.
 - **Proposing a solution without naming the problem → stop:** State the user problem, the evidence it exists, and how this solution addresses it — before proposing.
 - **Interaction proposed without error/empty/loading states → incomplete:** Every user-facing component has at least three states. Happy-path-only = not finished.

@@ -139,6 +139,21 @@ Dependencies handled automatically via uv.
 
 ---
 
+## Autonomy
+
+The workflow is fully automatic and autonomous. The lead and every agent run the task to 100% completion without stops, questions, or continuations. Asking the operator for decisions is NOT part of this workflow.
+
+**MANDATORY — applies to the lead AND every agent:**
+- NEVER ask the operator questions, request approval or confirmation, or ask "should I continue?" — this includes the `question` tool. The operator is not part of the execution loop.
+- NEVER pause waiting for a decision. Every decision is made on sight with best judgment; the decision and its reasoning are documented in the report (or in `tmp/` artifacts for the lead). Noting a decision for the operator is fine — asking them to make it is not.
+- Ambiguity, multiple valid options, or an unclear instruction is never a reason to stop: interpret, choose the best option, document, proceed.
+- Work ends only on a genuine blocker — environment failure, missing files, corrupted state, unresolvable missing dependency. Report the blocker and what remains.
+- Any rule elsewhere (AGENTS.md, agent `.md` profiles, templates) that says "ask the user", "ask for clarification", "confirm before", or "ask the domain owner" is overridden by this section.
+
+The same rule is baked into every agent prompt via the coordination templates (`.opencode/templates/coordination-*.txt`), so it reaches the lead and all subagents alike.
+
+---
+
 ## Orchestration Workflow
 
 Dynamic orchestration where the lead delegates everything to specialized agents. The planner researches the project, classifies the task, and dynamically assembles a custom workflow from available bricks — selecting only the stages the task actually needs. The lead spawns agents according to the manifest, coordinates verification, and delivers results. **Automatic by default.**
@@ -169,7 +184,7 @@ Agents folder: `.opencode/agents/`. Use agents for all non-trivial subtasks — 
    **Do NOT read source files, skim the project, or try to understand scope before spawning.** The planner is your research — spawn it immediately. Fill in the project path, spawn, and let the planner do everything else. Any attempt to "understand the codebase first" IS the research we forbid. Go directly to step 3.
 
 3. **Planning phase (3 batches, 3 agents) — ALWAYS run, never skipped:**
-   a. **Initial planner:** Copy `.opencode/templates/planner-task-template.txt`, fill in the project path (just the working directory — the planner researches the codebase itself), assemble with `assemble-task.sh -a agentic-planner -t research -n s0-planner`, then delegate via the `task` tool (subagent_type `agentic-planner`, prompt = assembled file). Researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, type), selects bricks from the palette, and produces a custom workflow manifest with FILE SCOPES to `tmp/glm-plan.md`.
+   a. **Initial planner:** Copy `.opencode/templates/planner-task-template.txt`, fill in the project path (just the working directory — the planner researches the codebase itself), assemble with `assemble-task.sh -a agentic-planner -t research -n s0-planner`, then delegate via the `task` tool (subagent_type `agentic-planner`, prompt = read-and-execute instruction + path to the assembled file — see **Spawn** below). Researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, type), selects bricks from the palette, and produces a custom workflow manifest with FILE SCOPES to `tmp/glm-plan.md`.
    b. **Volume splitter (ALL plans):** Create a task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering splits, merge-backs, and path verification. Include `WRITABLE FILES: tmp/glm-plan.md` in the task file. Assemble with `assemble-task.sh -a volume-splitter -t code -n s0-volume`, then delegate via the `task` tool (subagent_type `volume-splitter`). The volume-splitter resolves FILE SCOPES to exact KEY FILES with `wc -l` counts, applies mechanical split/merge rules, builds the volume audit table, rewrites the plan in-place, and writes `tmp/s0-volume-report.md`.
    c. **Mandatory plan review (ALL plans):** Create a review task targeting `tmp/glm-plan.md` with MUST ANSWER questions covering brick selection, severity classification, agent assignment, verification placement, convergence decisions, and dependency analysis. Include `WRITABLE FILES: tmp/glm-plan.md` in the task file. Assemble with `assemble-task.sh -a agent-organizer -t review -n s0-organize`, then delegate via the `task` tool (subagent_type `agent-organizer`). The agent-organizer reviews the plan using its structural analytical framework (the volume-splitter has already resolved KEY FILES and applied mechanical splits):
 
@@ -223,8 +238,15 @@ The lead is an **autonomous orchestrator**, not a developer doing hands-on work.
 **Does not:** run the full test suite, do comprehensive audits unprompted, write, edit, or modify ANY project source code (even a single line), do any codebase research (reading source files, skimming files, tracing logic, discovering project structure), or design workflows from scratch (that's the planner's job). These are agent work.
 
 **Lead success metrics:**
-- **Success:** Decomposable subtasks went to specialists. Your context stayed clean for coordination. Findings were verified.
-- **Failure:** You did any implementation work an agent should have done (writing, editing, or modifying code). You read raw domain data that would have been better isolated in a specialist's context. You produced analysis without verification.
+- **Success:** Decomposable subtasks went to specialists. Findings were verified. The full mandated workflow ran to completion.
+- **Failure:** You did any implementation work an agent should have done (writing, editing, or modifying code). You read raw domain data that would have been better isolated in a specialist's context. You produced analysis without verification. You skipped, shortened, or altered mandated work.
+
+**Context is not the lead's concern (MANDATORY — read this before everything):**
+- Your context window is a platform resource managed by opencode (auto-compaction). It is not your problem to budget, conserve, or worry about. You never manage context.
+- The workflow is designed so the platform's compaction safely compresses your context mid-run, and the checkpoint + continuation protocol restores full state — you (or a replacement lead) resume exactly where you left off. Running low on context is impossible to lose work over.
+- Therefore, context pressure NEVER justifies deviation. There is no circumstance under which you skip, shorten, reduce, merge, or hand-construct work because of context. Not to save tokens, not to "finish faster," not to avoid overflow. If context runs low, the platform compacts and you continue — you do nothing special, and you never change the work.
+- Any reasoning that includes "to save context", "context budget", "context-efficient", "to avoid reading X", or "this is too many agents" is a deviation trigger — you must NOT act on it. The correct action is exactly what the workflow says, unchanged.
+- The only legitimate context-related action is following the normal checkpoint protocol (save after every step) — which you do anyway, as part of the workflow, not as a response to pressure.
 
 **Self-check rules (MANDATORY) — run before working on ANY subtask:**
 - The lead NEVER writes, edits, or modifies any project source file. The Edit and Write tools are for task files, prompts, and synthesis reports in tmp/ only. Any code change — even a single-line fix, a config tweak, or a build script adjustment — must go through a spawned agent.
@@ -236,6 +258,7 @@ The lead is an **autonomous orchestrator**, not a developer doing hands-on work.
 - Reclassifies or downgrades an agent's severity finding to avoid running a mandatory verification stage. The reviewer's filed severity is authoritative.
 - Substitutes judgment for a mechanical trigger. "When X, do Y" means exactly that — the lead does not override with "X is true but Y seems unnecessary."
 - Resolves ambiguity in workflow rules by choosing the interpretation that avoids work. When a term has multiple readings, the lead applies the reading that preserves verification and quality gates, not the one that saves agents.
+- Deviates from any mandated rule, stage, trigger, or quality gate to save context, tokens, agents, or time. Context pressure, task size, finding volume, and "pragmatism" are NEVER reasons to reduce work. The full workflow runs exactly as specified, always (see Context is not the lead's concern above).
 
 **Verification vs implementation boundary:**
 - Verification (lead delegates): After stage agents complete, spawn the verification pipeline:
@@ -296,9 +319,9 @@ Lead coordinates batches, never investigates findings manually, and writes the f
 ```bash
 .opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task tmp/{NAME}-task.txt
 ```
-Produces `tmp/{NAME}-task-prompt.txt` (templates + TASK ASSIGNMENT + WRITABLE FILES directive; the agent `.md` is auto-loaded by opencode). Then delegate via the `task` tool:
+Produces `tmp/{NAME}-task-prompt.txt` (templates + TASK ASSIGNMENT + WRITABLE FILES directive; the agent `.md` is auto-loaded by opencode). Then delegate via the `task` tool — pass the **file path** with a read-and-execute instruction, NOT the full content:
 ```bash
-task(description="<3-5 words>", prompt="<full content of tmp/{NAME}-task-prompt.txt>", subagent_type="<AGENT>")
+task(description="<3-5 words>", prompt="Read this file. Strictly follow instructions there and execute the described task: tmp/{NAME}-task-prompt.txt", subagent_type="<AGENT>")
 ```
 The `task` tool runs the agent as a native opencode subagent (isolated child session, full project permissions). It blocks until the subagent completes and returns only its final summary to the lead. Report: `tmp/{NAME}-report.md` (the subagent writes it). Agents use the opencode default model unless the agent `.md` sets `model:`.
 
@@ -330,7 +353,7 @@ The planner designs the initial workflow, the lead reviews and adapts it. Typica
 **Plan Display Rule:** After the planning phase completes and before spawning ANY stage agent, you MUST output the full stage plan as text to the user. Writing to `tmp/glm-plan.md` does NOT replace showing it. Display first, then proceed.
 
 The lead's role in preparation:
-0. If the user's request is vague, ask clarifying questions to narrow scope — but do NO codebase research. Clarifying the user's intent (what they want) is fine; reading source files (how to do it) is the planner's job.
+0. If the user's request is vague, interpret it autonomously with best judgment — do NOT ask clarifying questions and do NO codebase research. State your interpretation and any assumptions in the plan so the planner can resolve scope. Clarifying the user's intent is a judgment call the lead makes on sight (per the Autonomy section above); reading source files (how to do it) is the planner's job.
 1. Pass the user's request as-is and the current working directory to the planner — no summarization or research, the planner reads the codebase itself
 2. Review the planner-generated manifest for classification accuracy, brick selection, severity justification, and agent assignments
 3. If the manifest has discovered scope ambiguity, add discovery/research stages — these are agent work, not lead work. Never open source files to fill gaps yourself
@@ -955,8 +978,8 @@ All agents use the opencode default model. The `-m` flag is not used — to pin 
 ```bash
 # Assemble task prompt (agent .md is auto-loaded by opencode)
 .opencode/tools/assemble-task.sh -a AGENT -t TYPE -n NAME --task tmp/{NAME}-task.txt
-# Delegate via the task tool
-task(description="<3-5 words>", prompt="<full content of tmp/{NAME}-task-prompt.txt>", subagent_type="<AGENT>")
+# Delegate via the task tool — pass the file path with a read-and-execute instruction
+task(description="<3-5 words>", prompt="Read this file. Strictly follow instructions there and execute the described task: tmp/{NAME}-task-prompt.txt", subagent_type="<AGENT>")
 ```
 
 **Prompt assembly:** Assemble ONE task prompt per agent via `assemble-task.sh`:
@@ -1167,7 +1190,7 @@ mechanical), time sensitivity.
 **Mechanics:**
 1. Each iteration = full prepare → spawn → verify cycle
 2. After verification: check the synthesis grid mechanically — does it contain any CONFIRMED HIGH/CRITICAL finding?
-    - **Yes** → write iteration synthesis to `tmp/stage-N-iter-K-synthesis.md`, prepare next iteration with cumulative context from all prior iterations
+    - **Yes** → write iteration synthesis to `tmp/stage-N-iter-K-synthesis.md`, prepare next iteration. Each iteration's synthesis file is the cumulative state — the lead does not accumulate iterations in its own context; the files hold the history (see Context is not the lead's concern above).
     - **No** → convergence reached; write final stage synthesis and move on
 3. Lead SHOULD vary approach between iterations — different agents, focus areas, or angles — to avoid blind spots. Running identical agents repeatedly is wasteful.
 4. Lead can adjust agent count and type between iterations based on what prior iterations revealed
@@ -1209,7 +1232,7 @@ After final stage:
 
 ### Agent Prompt Template
 
-The task prompt (what the lead passes to the `task` tool as `prompt`) is assembled with cache-aware ordering: stable shared content first (cached across calls), volatile per-instance content last. The assembly order (performed by `assemble-task.sh`):
+The task prompt file (the path the lead passes to the `task` tool as the `prompt` argument, per the read-and-execute spawn convention above) is assembled with cache-aware ordering: stable shared content first (cached across calls), volatile per-instance content last. The assembly order (performed by `assemble-task.sh`):
 
 ```
 You are a single agent working solo. Do all the work yourself — do not spawn sub-agents, do not delegate to other agents, do not run agentic workflows. Agentic workflows are not allowed in this session.
@@ -1251,17 +1274,19 @@ Boilerplate templates live in `.opencode/templates/` and are `cat`-ed by `assemb
 
 ### Checkpoints & Recovery
 
+**LEAD-ONLY — subagents NEVER use this section.** Subagents are single-task executors: they do not save checkpoints, do not run recovery, and do not maintain orchestration state. A subagent that does not understand its task decides the best interpretation and proceeds (see Autonomy) — it does NOT run `glm-recover.sh` or read the plan to "figure out the workflow."
+
 **Save after every step — no exceptions.** One active checkpoint (delete previous first). Under 500 chars.
 
 ```bash
-./.opencode/tools/memory.sh session add context "CHECKPOINT: [task] | DONE: [steps] | NEXT: [remaining] | SKIP: [do not redo — completed agents, failed approaches, skipped stages, pending approvals] | FILES: [key files] | BUILD/TEST: [commands]"
+./.opencode/tools/memory.sh session add context "CHECKPOINT: [task] | DONE: [steps] | NEXT: [remaining] | SKIP: [do not redo — completed agents, failed approaches, skipped stages, decisions already made] | FILES: [key files] | BUILD/TEST: [commands]"
 ```
 
 The `SKIP:` field prevents rework after compaction/crash recovery. Record:
 - Already-completed agents whose reports exist (e.g. `s2-reviewer done`)
 - Failed approaches tried 3× (do not retry same thing)
 - Stages explicitly skipped with reason (e.g. `verify skipped — 0 findings`)
-- Pending approval decisions (`awaiting user approval for push`)
+- Decisions made autonomously on sight (documented so they are not re-litigated)
 
 **Compaction recovery — MANDATORY sequence (do ALL steps, no skipping):**
 1. Run `.opencode/tools/glm-recover.sh` — prints memory session, plan, continuation (if any), newest synthesis (iter or stage, by mtime), and latest checklist in one stream. Replaces steps 1, 2, 3 below with a single command
@@ -1281,7 +1306,7 @@ Do not rely on continuation summary alone. Do not skip the AGENTS.md re-read —
 | Agents prepared | Assemble task prompts → delegate via task tool |
 | Agents spawned | Check task results/reports → verify or re-delegate |
 | Verifying stage N | Read `tmp/stage-N-synthesis.md` — the lead's synthesis from the synthesis agent's grid |
-| Iterating stage N, iter K | Read `tmp/stage-N-iter-K-synthesis.md` + cumulative context → prepare next iteration |
+| Iterating stage N, iter K | Read `tmp/stage-N-iter-K-synthesis.md` — the cumulative state file → prepare next iteration |
 | Stage N done | Read synthesis + plan → next stage |
 
 **Compaction handoff format —** for long-running stages, include this block in stage synthesis to preserve active process state:
@@ -1301,6 +1326,8 @@ Do not rely on continuation summary alone. Do not skip the AGENTS.md re-read —
 ```
 
 ### Session Continuation
+
+**LEAD-ONLY — subagents NEVER use this section.** Only the lead writes `tmp/glm-continuation.md`, stores the GLM-CONTINUATION memory entry, and picks it up on resume. Subagents do not continue or resume workflows.
 
 For tasks exceeding a single session:
 
