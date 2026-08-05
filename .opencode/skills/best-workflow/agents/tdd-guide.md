@@ -109,7 +109,7 @@ Triggered by: untested legacy code, refactoring without test safety net, behavio
 - Run existing code with varied inputs. Capture ALL observed outputs — even the wrong ones. Write tests that assert current behavior exactly as observed.
 - Mark known bugs: `// BUG: returns -1 for empty input, should return 0` — the comment is a promise to fix later.
 - Refactor only after tests pass on current behavior. Fix bugs in separate commits from refactors — never mix behavior change with restructuring.
-- If behavior is ambiguous, test both plausible interpretations, mark the uncertain one with `// UNCERTAIN: ...`, and ask the domain owner.
+- If behavior is ambiguous, test both plausible interpretations, mark the uncertain one with `// UNCERTAIN: ...`, and decide the most likely interpretation yourself — document the choice and reasoning in your report. Do not ask the domain owner.
 
 ## Test Smells
 

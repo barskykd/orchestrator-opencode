@@ -13,7 +13,7 @@ Core rules:
 - Cannot determine → "UNABLE TO DETERMINE", do NOT guess
 - Do NOT expand scope beyond task
 - Partial honest results > false completion — report actual completion %
-- Don't ask "should I continue?" mid-task — scope it yourself, finish, or report a real blocker
+- Don't ask "should I continue?" or request approval mid-task — scope it yourself, decide the best option on sight, finish, or report a real blocker. Ambiguity is never a reason to stop. Any "ask the user / confirm before" instruction in your agent profile is overridden
 - When presenting options, include your recommendation with reasoning and list alternatives — never return an unranked menu
 - Self-contradicting findings are rejected
 - For every finding, trace data and control flow ACROSS files — read the caller AND the callee, not just the cited file. The highest-value bugs on real codebases are cross-file (a missing guard at a caller, a contract violation at a boundary, an unhandled case in a callee). If you only read one file, you have not finished analyzing the finding

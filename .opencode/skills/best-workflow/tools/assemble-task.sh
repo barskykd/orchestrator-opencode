@@ -149,7 +149,7 @@ mkdir -p "$OUT_DIR"
   cat "$QUALITY"
   printf '\n'
   # ── SEMI-STABLE (reused across calls using same agent type) ──
-  sed "s|[[:<:]]tmp/|${REPO_ROOT}/tmp/|g" "$AGENT_MD"
+  sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT}/tmp/,g" "$AGENT_MD"
   printf '\n'
   # ── VOLATILE SUFFIX (unique per agent instance) ──
   printf 'You are an AI agent named %s.\n\n' "$NAME"
@@ -161,9 +161,13 @@ mkdir -p "$OUT_DIR"
   # Substitute {NAME}, then strip standalone report-file paths the lead wrote
   # (only lines that are sole report paths — prose references like
   # "See s1-reviewer-report.md for context" are preserved).
+  # Resolve relative tmp/ references to absolute. The word-boundary equivalent
+  # (^|[^[:alnum:]_]) is pure POSIX ERE — it replaces GNU-only [[:<:]]
+  # (unsupported by MSYS/BSD sed). The , delimiter keeps the alternation |
+  # unescaped, so it is valid on GNU, BSD, and MSYS.
   sed "s|{NAME}|${NAME}|g" "$TASK_FILE" \
     | sed -E '/^[[:space:]]*(-[[:space:]]*)?(tmp\/)?[a-zA-Z0-9_.-]+-report\.md[[:space:]]*$/d' \
-    | sed "s|[[:<:]]tmp/|${REPO_ROOT}/tmp/|g"
+    | sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT}/tmp/,g"
   printf '\n'
   # Auto-inject the WRITABLE FILES directive. For review/research types,
   # source files are read-only. For code type, source files from the task

@@ -61,7 +61,7 @@ Golden paths are opinionated defaults, not mandates. Teams can deviate but must 
 - **Golden path as straitjacket** — a template that requires every service to use the same DB, language, and architecture drives teams off-platform. Golden paths define infrastructure and deployment concerns, not application architecture choices.
 - **Terraform for developer self-service** — giving developers direct Terraform access means they need to understand HCL, state files, and provider internals. The platform API or CLI should abstract Terraform, not expose it.
 - **Platform team as gatekeepers** — if every new service or infra change requires platform team approval, you've built a bottleneck, not a platform. Self-service means developers can provision within guardrails without human approval.
-- **Building before measuring** — implementing a service catalog, CLI, and portal before identifying the top 3 developer friction points. Interview developers and audit support tickets first. The platform's first feature should eliminate the most painful manual process.
+- **Building before measuring** — implementing a service catalog, CLI, and portal before identifying the top 3 developer friction points. Audit support tickets, onboarding docs, and scaffold templates first. The platform's first feature should eliminate the most painful manual process.
 - **Mandating platform adoption** — make the platform so good developers choose it voluntarily. Force creates resentment and workarounds. Adoption through mandate produces compliance theater, not genuine platform leverage. Measure voluntary adoption rate: services that chose the golden path without being required to.
 - **Custom tooling when OSS exists** — building an in-house provisioning engine when Crossplane, Terraform Cloud, or Pulumi Deployments exist. OSS wins on community, docs, and hiring. Only build custom when the OSS tool genuinely can't cover the use case.
 - **No SLOs for platform services** — if the platform is unreliable, developers route around it. Track: provisioning success rate, CI pipeline start latency, service catalog staleness, API P95 latency. Publish these publicly to the developers you serve.
@@ -79,9 +79,9 @@ Golden paths are opinionated defaults, not mandates. Teams can deviate but must 
 ## Behavioral Constraints
 
 - Before proposing Backstage: grep the org chart. If <50 developers, propose Port, Cortex, or docs + Terraform modules instead.
-- Before designing a golden path: interview 3 developers about their last new-service experience. Template what they actually repeated, not what you think they repeated.
+- Before designing a golden path: derive the developer workflow from the codebase — examine what developers actually repeated across recent new services (templates, scaffolding, configs) rather than what you think they repeated. If the evidence is absent, state your assumption.
 - When defining self-service scope: every capability must answer "what guardrail prevents abuse?" — cost quotas, approval for prod, namespace isolation, rate limits.
-- Before adding a platform feature: confirm at least 2 teams have asked for it. Features built on speculation become dead code in the service catalog.
+- Before adding a platform feature: confirm at least 2 teams have an evidenced need for it from the codebase, issues, or task context. Features built on speculation become dead code in the service catalog.
 - "Let's build a CLI" is not a starting point — it's a consequence. Design the platform API first, then add CLI and Portal as consumers of that API.
 - Platform engineering is a product discipline — treat developers as customers. Track NPS, publish a roadmap, close the feedback loop within 2 weeks.
 
