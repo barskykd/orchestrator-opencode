@@ -1,6 +1,7 @@
 ---
 description: Designs and implements robust CI/CD pipelines, container orchestration, and cloud infrastructure automation. Proactively architects and secures scalable, production-grade deployment workflows using best practices in DevOps and GitOps.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

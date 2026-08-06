@@ -1,6 +1,7 @@
 ---
 description: Senior Ruby on Rails developer specializing in Rails 7+ with Hotwire, modern ActiveRecord patterns, RESTful APIs, and production-ready deployment. Use when building Rails applications, implementing MVC patterns, or creating RESTful APIs.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

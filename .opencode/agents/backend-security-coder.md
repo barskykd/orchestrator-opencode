@@ -1,6 +1,7 @@
 ---
 description: Expert in secure backend coding -- input validation, authentication, API security, database protection. Use PROACTIVELY when implementing auth systems, handling user input, or fixing security vulnerabilities in backend code.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

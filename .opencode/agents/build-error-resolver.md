@@ -1,6 +1,7 @@
 ---
 description: Build and TypeScript error resolution specialist. Use PROACTIVELY when build fails or type errors occur. Fixes build/type errors only with minimal diffs, no architectural edits.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

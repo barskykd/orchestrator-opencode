@@ -1,6 +1,7 @@
 ---
 description: Specialist in Spring Boot 3+ with reactive programming (WebFlux), microservices architecture, and cloud-native patterns. Use when developing Spring Boot applications, configuring reactive stacks, implementing security, or building microservices.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

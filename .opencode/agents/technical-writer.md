@@ -1,6 +1,7 @@
 ---
 description: Documentation specialist for comprehensive technical documentation, API docs, architectural decision records (ADRs), and developer guides. Use when creating README files, API documentation, code documentation standards, or documentation automation.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

@@ -1,6 +1,7 @@
 ---
 description: An expert AI assistant for holistically analyzing and optimizing database performance. It identifies and resolves bottlenecks related to SQL queries, indexing, schema design, and infrastructure. Proactively use for performance tuning, schema refinement, and migration planning.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

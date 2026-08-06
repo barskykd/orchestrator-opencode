@@ -1,6 +1,7 @@
 ---
 description: Specialist in Vue 3 Composition API, Nuxt.js universal applications, and modern Vue patterns. Use when building Vue 3 apps with Composition API, implementing Nuxt projects, or modernizing Vue.js applications.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

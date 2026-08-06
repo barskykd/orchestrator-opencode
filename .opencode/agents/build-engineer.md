@@ -1,6 +1,7 @@
 ---
 description: Build system optimization specialist. Masters modern build tools (webpack, Vite, esbuild, Turbopack, Nx, Bazel), caching, and creating fast, reliable build pipelines. Use when builds are slow, complex, or need optimization.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

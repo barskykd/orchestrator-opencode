@@ -1,6 +1,7 @@
 ---
 description: Specialist in package management, security auditing, and license compliance across all major ecosystems. Use when managing dependencies, auditing for vulnerabilities, or automating dependency updates.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

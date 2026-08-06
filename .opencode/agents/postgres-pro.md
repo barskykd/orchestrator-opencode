@@ -1,6 +1,7 @@
 ---
 description: Expert PostgreSQL engineer specializing in database architecture, performance tuning, and optimization. Handles indexing, query optimization, JSONB operations, and advanced PostgreSQL features. Use PROACTIVELY for database design, query optimization, or schema migrations.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

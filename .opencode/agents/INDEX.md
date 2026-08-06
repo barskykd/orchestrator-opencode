@@ -1,4 +1,4 @@
-# Agent Directory (112 agents)
+# Agent Directory (113 agents)
 
 Quick reference for agent selection. Pick the MOST specialized agent for the task — domain-specific checklists and anti-patterns only work when the agent matches the domain.
 
@@ -181,6 +181,7 @@ When in doubt, specialization always wins over mode. A `TRACE` security-reviewer
 | product-manager.md | Product manager | SWEEP | Product vision, strategy, roadmaps |
 | refactor-cleaner.md | Refactor/cleanup | KNOW | Dead code removal, consolidation |
 | research-analyst.md | Research analyst | KNOW | Structured research, source evaluation |
+| verification-analyst.md | Verification analyst | Workflow-internal: extraction + synthesis for the verification pipeline (dedupe findings, classify severity, batch adversarial review, compile verdict grids) and knowledge harvesting. Pinned reasoningEffort: high. |
 | websocket-engineer.md | WebSocket engineer | SWEEP | Real-time messaging, Socket.IO |
 | web-searcher.md | Web researcher | SWEEP | Internet search + synthesis |
 | agent-organizer.md | Agent orchestrator | Multi-agent task delegation |

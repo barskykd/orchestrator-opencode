@@ -1,6 +1,7 @@
 ---
 description: Specialist in Retrieval-Augmented Generation (RAG) systems design, vector database selection, chunking strategies, and retrieval workflow optimization. Use when designing, implementing, or optimizing RAG architectures.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

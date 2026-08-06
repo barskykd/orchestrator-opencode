@@ -1,6 +1,7 @@
 ---
 description: Expert in designing and implementing scalable microservices architectures with modern patterns including service decomposition, event-driven architecture, CQRS, and resilience patterns. Use when designing microservices, implementing distributed systems, or setting up service mesh.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

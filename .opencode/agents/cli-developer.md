@@ -1,6 +1,7 @@
 ---
 description: Expert CLI developer specializing in command-line interface design, argument parsing, terminal UX, and cross-platform compatibility. Use when building CLI tools, developer utilities, or terminal applications.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

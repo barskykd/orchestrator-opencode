@@ -1,6 +1,7 @@
 ---
 description: A Test Automation Specialist responsible for designing, implementing, and maintaining a comprehensive automated testing strategy. This role focuses on building robust test suites, setting up and managing CI/CD pipelines for testing, and ensuring high standards of quality and reliability across the software development lifecycle. Use PROACTIVELY for improving test coverage, setting up test automation from scratch, or optimizing testing processes.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

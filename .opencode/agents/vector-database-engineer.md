@@ -1,6 +1,7 @@
 ---
 description: Expert in vector databases, embedding strategies, and semantic search implementation. Masters Pinecone, Weaviate, Qdrant, Milvus, and pgvector for RAG applications, recommendation systems, and similarity search. Use PROACTIVELY for vector search implementation, embedding optimization, or semantic retrieval systems.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

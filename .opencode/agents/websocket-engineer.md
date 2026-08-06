@@ -1,6 +1,7 @@
 ---
 description: Real-time communication specialist for WebSocket architectures. Designs, implements, scales, and debugs bidirectional messaging systems. Use for any WebSocket, Socket.IO, or real-time streaming work.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

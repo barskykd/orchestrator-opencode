@@ -1,6 +1,7 @@
 ---
 description: Documentation and codemap specialist. Use PROACTIVELY for updating codemaps and documentation. Runs /update-codemaps and /update-docs, generates docs/CODEMAPS/*, updates READMEs and guides.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

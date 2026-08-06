@@ -1,6 +1,7 @@
 ---
 description: Expert Haskell engineer specializing in advanced type systems, pure functional design, and high-reliability software. Use PROACTIVELY for type-level programming, concurrency, and architecture guidance.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

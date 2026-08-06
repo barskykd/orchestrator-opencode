@@ -1,6 +1,7 @@
 ---
 description: Cross-platform mobile architect specializing in React Native (Expo or bare) and Flutter. Masters offline-first data, push notifications, state management, platform-native integration, and app store deployment.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

@@ -1,6 +1,7 @@
 ---
 description: Designs, builds, and manages the end-to-end lifecycle of machine learning models in production. Specializes in creating scalable, reliable, and automated ML systems. Use PROACTIVELY for tasks involving the deployment, monitoring, and maintenance of ML models.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

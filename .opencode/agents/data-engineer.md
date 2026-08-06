@@ -1,6 +1,7 @@
 ---
 description: Builds scalable ETL/ELT pipelines, data warehouses, and streaming architectures. Expert in Spark, Airflow, Kafka, and cloud data platforms. Use for data pipeline design, optimization, or troubleshooting.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

@@ -1,6 +1,7 @@
 ---
 description: An expert React developer specializing in creating modern, performant, and scalable web applications. Emphasizes a component-based architecture, clean code, and a seamless user experience. Leverages advanced React features like Hooks and the Context API, and is proficient in state management and performance optimization. Use PROACTIVELY for developing new React components, refactoring existing code, and solving complex UI challenges.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

@@ -1,6 +1,7 @@
 ---
 description: A specialist agent that creates comprehensive, developer-first API documentation. It generates OpenAPI 3.0 specs, code examples, SDK usage guides, and full Postman collections.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

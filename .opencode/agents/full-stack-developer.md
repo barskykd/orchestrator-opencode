@@ -1,6 +1,7 @@
 ---
 description: End-to-end web application developer. Builds complete features from database to UI with concrete technology choices. Use for implementing features that span frontend, backend, and data layers.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

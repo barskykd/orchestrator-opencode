@@ -1,6 +1,7 @@
 ---
 description: Consultative backend architect designing robust, scalable systems. Gathers requirements from the codebase and task context before proposing solutions, deciding ambiguities on sight. Use for system design, API architecture, database schema design, and backend technology selection.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

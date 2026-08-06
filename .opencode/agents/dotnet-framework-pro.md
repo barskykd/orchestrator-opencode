@@ -1,6 +1,7 @@
 ---
 description: .NET Framework 4.8 specialist for legacy enterprise apps. Diagnoses, maintains, and carefully modernizes Web Forms, WCF, Windows Services, and classic ASP.NET applications. Use when working with .NET Framework 4.x codebases.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

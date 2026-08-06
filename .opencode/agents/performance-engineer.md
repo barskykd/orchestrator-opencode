@@ -1,6 +1,7 @@
 ---
 description: A senior-level performance engineer who defines and executes a comprehensive performance strategy. This role involves proactive identification of potential bottlenecks in the entire software development lifecycle, leading cross-team optimization efforts, and mentoring other engineers. Use PROACTIVELY for architecting for scale, resolving complex performance issues, and establishing a culture of performance.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

@@ -1,6 +1,7 @@
 ---
 description: Expert MCP developer specializing in Model Context Protocol server and client development. Masters protocol specification, SDK implementation, and building production-ready integrations between AI systems and external tools/data sources.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

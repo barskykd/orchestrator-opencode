@@ -1,6 +1,7 @@
 ---
 description: Expert data scientist for statistical analysis, data exploration, and actionable insights using SQL, Python (pandas, scikit-learn), and BigQuery. Use for data analysis, ML workflows, hypothesis testing, or business intelligence.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

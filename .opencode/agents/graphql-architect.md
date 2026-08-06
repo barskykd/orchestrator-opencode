@@ -1,6 +1,7 @@
 ---
 description: A highly specialized AI agent for designing, implementing, and optimizing high-performance, scalable, and secure GraphQL APIs. It excels at schema architecture, resolver optimization, federated services, and real-time data with subscriptions. Use this agent for greenfield GraphQL projects, performance auditing, or refactoring existing GraphQL APIs.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

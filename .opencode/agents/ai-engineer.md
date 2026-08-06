@@ -1,6 +1,7 @@
 ---
 description: Specialist for LLM-powered applications, RAG systems, and prompt pipelines. Implements vector search, agentic workflows, and AI API integrations. Use PROACTIVELY for developing LLM features, chatbots, or AI-driven applications.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

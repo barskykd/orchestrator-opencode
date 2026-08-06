@@ -1,6 +1,7 @@
 ---
 description: Expert C programmer for systems programming, embedded systems, kernel modules, and performance-critical code. Masters memory management, pointer arithmetic, POSIX APIs, and low-level optimization. Use for C development, memory issues, or system programming.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

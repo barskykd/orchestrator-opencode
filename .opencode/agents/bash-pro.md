@@ -1,6 +1,7 @@
 ---
 description: Master of defensive Bash scripting for production automation, CI/CD pipelines, and system utilities. Expert in safe, portable, and testable shell scripts. Use for any non-trivial shell scripting.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

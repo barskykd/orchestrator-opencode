@@ -1,6 +1,7 @@
 ---
 description: API architecture expert designing scalable, developer-friendly interfaces. Creates REST and GraphQL APIs with comprehensive documentation. Use when designing new APIs, refactoring existing endpoints, or establishing API standards.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

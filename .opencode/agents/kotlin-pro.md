@@ -1,6 +1,7 @@
 ---
 description: Specialist in Kotlin for Android development, Kotlin Multiplatform Mobile (KMM), and modern Kotlin patterns. Use when developing Android apps with Jetpack Compose, KMM, or Kotlin coroutines/flows.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

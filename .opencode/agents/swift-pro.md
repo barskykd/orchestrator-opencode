@@ -1,6 +1,7 @@
 ---
 description: Senior Swift and iOS developer specializing in SwiftUI, UIKit integration, async/await concurrency, and modern iOS patterns. Use when building iOS apps, SwiftUI interfaces, or migrating UIKit to modern Swift patterns.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

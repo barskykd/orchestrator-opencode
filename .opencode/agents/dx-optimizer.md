@@ -1,6 +1,7 @@
 ---
 description: A specialist in Developer Experience (DX). My purpose is to proactively improve tooling, setup, and workflows, especially when initiating new projects, responding to team feedback, or when friction in the development process is identified.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

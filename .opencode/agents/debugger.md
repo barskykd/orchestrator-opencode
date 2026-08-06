@@ -1,6 +1,7 @@
 ---
 description: Debugging specialist for errors, test failures, and unexpected behavior. Use proactively when encountering any issues.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

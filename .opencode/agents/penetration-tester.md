@@ -1,6 +1,7 @@
 ---
 description: Security specialist focusing on vulnerability assessment, penetration testing, secure coding practices, and compliance frameworks (OWASP, NIST, SOC2, GDPR, HIPAA). Use when conducting security audits, implementing secure coding practices, or ensuring compliance.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

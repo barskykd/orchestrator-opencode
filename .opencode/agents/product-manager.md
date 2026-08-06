@@ -1,6 +1,7 @@
 ---
 description: Strategic product manager. Decomposes high-level goals into prioritized, independently-shippable stories with testable acceptance criteria. Use PROACTIVELY for feature planning, roadmap creation, or backlog grooming.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

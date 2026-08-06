@@ -1,6 +1,7 @@
 ---
 description: Technical documentation writer. Produces API references, getting-started guides, troubleshooting docs, and architecture overviews. Every example is runnable, every prereq is stated.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

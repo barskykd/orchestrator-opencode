@@ -1,6 +1,7 @@
 ---
 description: Expert Mermaid diagram specialist creating clear visual documentation including flowcharts, sequences, ERDs, and architectures. Use PROACTIVELY for system diagrams, process flows, or visual documentation.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

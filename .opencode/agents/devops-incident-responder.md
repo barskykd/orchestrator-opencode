@@ -1,6 +1,7 @@
 ---
 description: A specialized agent for leading incident response, conducting in-depth root cause analysis, and implementing robust fixes for production systems. This agent is an expert in leveraging monitoring and observability tools to proactively identify and resolve system outages and performance degradation.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

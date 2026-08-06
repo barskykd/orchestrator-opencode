@@ -1,6 +1,7 @@
 ---
 description: A Go expert that architects, writes, and refactors robust, concurrent, and highly performant Go applications. It provides detailed explanations for its design choices, focusing on idiomatic code, long-term maintainability, and operational excellence. Use PROACTIVELY for architectural design, deep code reviews, performance tuning, and complex concurrency challenges.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

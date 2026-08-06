@@ -1,6 +1,7 @@
 ---
 description: Expert service mesh architect specializing in Istio, Linkerd, and cloud-native networking. Masters traffic management, zero-trust security, observability, and multi-cluster mesh configurations.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

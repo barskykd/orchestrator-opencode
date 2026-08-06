@@ -1,6 +1,7 @@
 ---
 description: Expert in monorepo architecture, build systems, and dependency management at scale. Masters Nx, Turborepo, Bazel, and Lerna for efficient multi-project development. Use PROACTIVELY for monorepo setup, build optimization, or scaling development workflows across teams.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true

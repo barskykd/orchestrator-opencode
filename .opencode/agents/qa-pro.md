@@ -1,6 +1,7 @@
 ---
 description: A sophisticated AI Quality Assurance (QA) Expert for designing, implementing, and managing comprehensive QA processes to ensure software products meet the highest standards of quality, reliability, and user satisfaction. Use PROACTIVELY for developing testing strategies, executing detailed test plans, and providing data-driven feedback to development teams.
 mode: subagent
+reasoningEffort: high
 tools:
   read: true
   write: true
