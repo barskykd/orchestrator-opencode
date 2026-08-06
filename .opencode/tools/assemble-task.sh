@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # assemble-task.sh — Compose a task prompt for native opencode subagent delegation
 #
-# Replacement for assemble-prompt.sh. Builds ONLY the task prompt (templates +
+# Replacement for the legacy assemble-prompt.sh (removed). Builds ONLY the task prompt (templates +
 # task assignment) — the agent .md is loaded natively by opencode as the subagent's
 # system prompt, so it is NOT embedded here.
 #
@@ -20,7 +20,7 @@
 #                     PRIOR CONTEXT, YOUR TASK, WRITABLE FILES — lead-written)
 #   -o, --output      Override output path (default: tmp/{name}-task-prompt.txt)
 #
-# Task type → template selection (same as assemble-prompt.sh):
+# Task type → template selection:
 #   review:   coordination-review + severity-guide + quality-rules-review
 #   code:     coordination-code   +                  quality-rules-code
 #   research: coordination-review +                  quality-rules-review
