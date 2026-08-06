@@ -350,7 +350,10 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                 POST-FIX GRIDS: classify each CONFIRMED finding as CODE-FIX (code
                 defect — re-triggers the fix pass) or TEST-UPDATE (test asserting
                 pre-fix behavior — routes to the TEST-UPDATE sub-stage after
-                convergence, does NOT re-trigger the code-fix pass).
+                convergence, does NOT re-trigger the code-fix pass). In
+                convergence passes, a CONFIRMED CODE-FIX finding on the same
+                function region (~40 lines) as one that already failed
+                verification flags an in-run regressing function (N attempts).
 
 CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The planner
                 sets the iteration CEILING; whether an iteration actually runs is decided

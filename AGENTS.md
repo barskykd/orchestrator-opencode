@@ -671,6 +671,10 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                 (code defect — re-triggers the fix pass) or TEST-UPDATE (test
                 asserting pre-fix behavior — does NOT re-trigger the code-fix
                 pass; routes to the TEST-UPDATE sub-stage after convergence).
+                In convergence passes, compare against the prior pass's grid:
+                a CONFIRMED CODE-FIX finding on the same function region
+                (~40 lines) as a finding that already failed verification
+                flags an in-run regressing function (N attempts).
 
 CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The planner
                 sets the iteration CEILING; whether an iteration actually runs is decided
@@ -1149,7 +1153,7 @@ Surfaces PRIOR_FIX_ATTEMPT regression signals from extraction. When a file has �
 
 Also sanity-checks severity assignments against the severity classification criteria — if a finding's severity appears mismatched (e.g., "SQL injection" labeled MEDIUM), flag it as CHALLENGED. Challenged findings are re-routed through adversarial verification. Exception: documentation-domain challenged findings skip adversarial — documentation severity is inherently subjective (is "10 missing API docs" HIGH or MEDIUM?) and adversarial review of severity ratings adds no meaningful verification. Documentation-domain challenged findings stay at their challenged severity; the lead accepts the downgrade directly.
 
-For POST-FIX grids, the synthesis agent additionally classifies each CONFIRMED finding as **CODE-FIX** (code defect — re-triggers the fix pass) or **TEST-UPDATE** (test asserting pre-fix behavior — does NOT re-trigger the code-fix pass; routes to the TEST-UPDATE sub-stage after convergence).
+For POST-FIX grids, the synthesis agent additionally classifies each CONFIRMED finding as **CODE-FIX** (code defect — re-triggers the fix pass) or **TEST-UPDATE** (test asserting pre-fix behavior — does NOT re-trigger the code-fix pass; routes to the TEST-UPDATE sub-stage after convergence). For post-fix grids in convergence passes, also compare CONFIRMED CODE-FIX findings against the prior pass's grid: a finding mapping to the same function region (~40 lines) as a finding that already failed verification in a previous pass flags that region as an **in-run regressing function (N attempts)** — surface the flag for the lead's pre-fix audit trigger.
 
 **If the synthesis grid shows zero CONFIRMED findings at MEDIUM or above** (all MEDIUM+ findings were REJECTED, all were DROPPED, or only LOW-severity survivors remain), FIX is SKIPPED — there is nothing significant to fix. LOW verified findings are acknowledged in the synthesis as non-blocking. The lead writes the synthesis with `FIX SKIPPED: Zero MEDIUM+ verified findings — nothing to fix.` This is mechanical — no lead judgment.
 
@@ -1177,7 +1181,7 @@ For POST-FIX grids, the synthesis agent additionally classifies each CONFIRMED f
    **FIX convergence (incomplete fixes):** After a FIX stage's post-fix VERIFY produces CONFIRMED CODE-FIX findings in the synthesis grid, auto-add another FIX pass regardless of whether IMPLEMENT is already in the manifest. IMPLEMENT presence does not block FIX convergence — surviving CODE-FIX findings mean the fix was incomplete. Repeat until post-fix review produces zero CONFIRMED CODE-FIX findings and VERIFY is skipped. Each convergence pass re-runs the build-gate before its post-fix review. TEST-UPDATE findings (tests asserting pre-fix behavior) do NOT re-trigger the code-fix pass. After convergence, if the grid contains TEST-UPDATE findings or CONFIRMED fixes lack regression tests, auto-add a TEST-UPDATE stage (1 agent: test-automator or the domain's language specialist — updates stale tests + writes regression tests pinning the fixes; PRIOR CONTEXT = the synthesis grid; WRITABLE FILES = the named test files; does NOT touch production code), followed by a build-gate re-run and 1 review agent (no weakened pins, no scope creep; no adversarial pipeline for test-only changes). When convergence is reached, proceed to Delivery — convergence does not end the workflow.
    **Regression-aware fix scrutiny:** When the synthesis grid flags any file as a repeat-regression hotspot (≥3 PRIOR_FIX_ATTEMPT findings on the same file), that file's fix agent MUST receive a second-opinion reviewer — regardless of finding severity on that file. Files with a demonstrated pattern of incomplete fixes from prior production check runs require elevated review to break the fix-regress cycle.
 
-   When the synthesis grid flags a regressing function (≥3 PRIOR_FIX_ATTEMPT findings clustered within ~40 lines of the same function), the lead spawns a single pre-fix audit agent BEFORE the fix stage. The audit agent:
+   When the synthesis grid flags a regressing function (≥3 PRIOR_FIX_ATTEMPT findings clustered within ~40 lines of the same function, OR an in-run regressing function flagged by the synthesis agent — ≥2 consecutive failed fix attempts on the same function region within this run), the lead spawns a single pre-fix audit agent BEFORE the fix stage. The audit agent:
    - Reads only the flagged function and its immediate context (the function body plus its callers in the same file — not the full module)
    - Reads the git history of prior failed fix attempts for that function
    - Produces a localized structural recommendation: extract a helper, consolidate duplicate guards, hoist a validation check — a change strictly within that function's own file, touching no public APIs or cross-file interfaces
