@@ -744,9 +744,15 @@ FIX             Apply verified findings. Always 3-4 sequential stages — includ
                 the tests covering the changed files plus grep-derived test files
                 importing changed modules; reports GATE PASS/FAIL with file:line
                 attribution via `git diff`; modifies NOTHING — report-only
-                tripwire) → post-fix REVIEW (same variant/domain split as the
+                tripwire; the sole exception to the per-agent parallel-safety
+                rule — it runs the full suite solo, after the parallel batch
+                completes) → post-fix REVIEW (same variant/domain split as the
                 REVIEW stage), then VERIFY if any post-fix review report contains
-                at least one finding at MEDIUM severity or above. A finding is any
+                at least one finding at MEDIUM severity or above. Fix agents MUST
+                self-verify their own changes before reporting (parallel-safe
+                verification per quality-rules-code.txt: compile/syntax checks of
+                changed files or targeted tests — never the full suite, which is
+                the build-gate's job). A finding is any
                 numbered item with a severity label and code reference (file:line,
                 function, or block) in a reviewer's report. The lead does NOT
                 re-classify, downgrade, or exclude findings — the reviewer's filed
@@ -924,7 +930,7 @@ After a FIX stage's post-fix VERIFY produces CONFIRMED MEDIUM+ findings in the s
   Stage N+2: Verification — severity-routed (extraction → adversarial [CRITICAL 1:1, HIGH 1 per 3, MEDIUM 1 per 8] → synthesis)
 ```
 
-**Fix agents** (docs, configs, scripts): use default model agents for code. Split fixes by domain — one agent per domain. Every fix stage MUST be followed by a build-gate and a post-fix review:
+**Fix agents** (docs, configs, scripts): use default model agents for code. Split fixes by domain — one agent per domain. Fix agents MUST self-verify their changes before reporting (parallel-safe verification per quality-rules-code.txt: compile/syntax of changed files or targeted tests — never the full suite; the build-gate runs it). Every fix stage MUST be followed by a build-gate and a post-fix review:
 ```
   Stage N: Fixes — N agents split by domain
   Stage N+1: Build-gate — 1 mechanical agent (compiles + runs tests covering changed files, report-only, GATE PASS/FAIL)
@@ -983,7 +989,7 @@ For each agent in the current stage:
 4. **Validate task prompt contains ALL:** TASK ASSIGNMENT with MUST ANSWER questions, quality rules, severity guide (review only), environment (code only), coordination, report format. The script handles all boilerplate automatically — you only own the task file. The agent `.md` is auto-loaded by opencode. Missing ANY = do not spawn
 5. Match agent type to task: REVIEW → code-reviewer, security-reviewer, backend-architect. CODE → language-pro, debugger. **Git/history analysis** (blame, log, diff, tracing fixes through commits) → `debugger` or `research-analyst`
 6. **WRITABLE FILES:** Code agents: task file MUST list the exact source files/directories the agent may modify. Review/audit/research agents: omit WRITABLE FILES entirely — the script auto-injects the correct report path and marks all source files as read-only.
-   - **Implementation agents:** WRITABLE FILES must list the exact source files the agent may modify directly. The task must instruct them to produce their implementation and run any available lint/test commands to verify correctness. The task MUST also instruct them to write an Intent section in their report before coding: a description of their understanding of the task and their intended approach, in their own words, at whatever level of detail they think is useful for the reviewer. The agent decides what to communicate — architectural reasoning, assumptions about the codebase, trade-offs considered, alternatives rejected, or anything else that helps someone else understand why they built what they built. This is the first thing they write, before any code.
+   - **Implementation agents:** WRITABLE FILES must list the exact source files the agent may modify directly. The task must instruct them to produce their implementation and run the mandatory parallel-safe verification (per quality-rules-code.txt: compile/syntax check of changed files or targeted tests — NEVER the full suite; the build-gate/TEST stage runs it). The task MUST also instruct them to write an Intent section in their report before coding: a description of their understanding of the task and their intended approach, in their own words, at whatever level of detail they think is useful for the reviewer. The agent decides what to communicate — architectural reasoning, assumptions about the codebase, trade-offs considered, alternatives rejected, or anything else that helps someone else understand why they built what they built. This is the first thing they write, before any code.
    - **Implementation and Fix agents — mandatory pre-work reading:** The YOUR TASK section MUST instruct the agent to read the verification pipeline's synthesis grid report (full confirmed findings with adversarial evidence: grep results, call-chain traces, cross-file context) BEFORE writing any code. Include the exact file paths in the task (e.g., `tmp/sN-synth-report.md`). When the task involves specific finding IDs (e.g., "Fix finding F-03"), the agent MUST read that finding's full entry in the synthesis report — the lead's one-line PRIOR CONTEXT summary is navigational, not authoritative. The synthesis report is the authoritative source of finding details, evidence context, and original discovery analysis. For FIX convergence passes (re-fixes of surviving findings), also include the path to the prior-pass synthesis report so the agent can see what was already attempted and why it failed.
    - **Review/audit/research agents:** omit WRITABLE FILES entirely — the script auto-injects the correct report path and marks all source files as read-only.
 Describe problems and desired behavior — do NOT paste exact fix code unless precision is critical (regex, API signatures, security logic). Name agents with stage prefix: `s1-researcher`, `s2-impl-auth`.
@@ -1282,7 +1288,7 @@ You are an AI agent named {NAME}.
 PROJECT: {working directory and project description}
 
 ENVIRONMENT (code tasks only):
-{Runtime, test command, lint command}
+{Runtime, test command (full suite — build-gate/TEST stage only, never per-agent), lint command}
 
 PRIOR CONTEXT (stage 2+ or iteration 2+):
 {Navigation aid per Between Stages step 5 — file paths to source reports the agent MUST read (synthesis grid, discovery reports, prior Intent sections), one-line item counts, lead decisions and constraints. NOT a replacement for reading agent reports. Target under 50 lines.}
