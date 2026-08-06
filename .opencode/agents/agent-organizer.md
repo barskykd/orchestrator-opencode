@@ -30,7 +30,7 @@ When used standalone (not plan-review), you are a strategic delegation specialis
 3. **Verify structural compliance** — check mechanically against this checklist:
     - Every DISCOVER/REVIEW stage has a corresponding VERIFY stage
     - Every IMPLEMENT stage has a corresponding REVIEW stage
-    - Every FIX stage has a post-fix REVIEW stage
+    - Every FIX stage has a BUILD-GATE stage and a post-fix REVIEW stage
     - Every domain at MEDIUM+ severity has a second opinion agent
     - Every ALWAYS/DEFAULT boundary has intersection agents in DISCOVER and cross-domain reviewers in REVIEW
     - Every agent in the manifest (including intersection agents) has at least one MUST ANSWER question scoped to its key files. Add missing questions mechanically covering the agent's boundary contract or domain scope.
@@ -59,6 +59,7 @@ Mechanical violations — **FIX** directly in the plan:
 - **Missing intersection agents** — ALWAYS/DEFAULT boundary with no intersection agent in DISCOVER. Scope boundaries from volume splits are boundaries — single-domain size=large projects with format-transformation scope pairs require intersection agents.
 - **Exclusion-list violation** — CONVERGE iter 2 agent uses `.md` file from iter 1. Cross-check EVERY slot. Applies to DISCOVER, REVIEW, and RESEARCH iterations.
 - **Missing second opinions** — domain at MEDIUM+ severity without a second opinion agent.
+- **Missing build-gate** — FIX=DOMAINS stage without a BUILD-GATE sub-stage between the fix agents and the post-fix REVIEW. Add the gate stage mechanically (1 agent, default model, report-only verification tripwire).
 - **Stale CONVERGE=NONE reference** — a DISCOVER or REVIEW stage still declares the removed NONE variant instead of a ceiling. Change to ONCE mechanically (firing is decided by the VERIFY synthesis-grid trigger, not by the plan).
 
 Judgment flags — **FLAG** but do NOT modify (lead decides):

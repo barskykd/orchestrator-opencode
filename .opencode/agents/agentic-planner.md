@@ -441,27 +441,47 @@ CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The 
                 explicitly in the plan. Using the same agent or the same pair
                 across iterations is a protocol violation.
 
-FIX             Apply verified findings. Always 2-3 sequential stages — includes post-fix review.
+FIX             Apply verified findings. Always 3-4 sequential stages — includes build-gate and post-fix review.
                 Always executes in this order when DOMAINS:
                   1. Fix agents per domain — apply confirmed findings
-                  2. Post-fix REVIEW (same variant/domain split as the REVIEW stage — includes second opinions at MEDIUM+ severity per domain, and cross-domain integration reviewers for triaged boundaries)
-                  3. VERIFY — only if post-fix REVIEW found findings at MEDIUM severity or above
+                  2. BUILD-GATE — 1 mechanical agent (default model): compiles
+                     the tree, runs tests covering the changed files plus
+                     grep-derived test files importing changed modules, reports
+                     GATE PASS/FAIL with file:line attribution via git diff.
+                     Report-only — modifies nothing, fixes nothing, reviews
+                     nothing. Workflow-internal artifact, not a finding source
+                     (no severity classification, no adversarial routing).
+                  3. Post-fix REVIEW (same variant/domain split as the REVIEW stage — includes second opinions at MEDIUM+ severity per domain, and cross-domain integration reviewers for triaged boundaries). Reviewers receive the gate status as one-line PRIOR CONTEXT.
+                  4. VERIFY — only if post-fix REVIEW found findings at MEDIUM severity or above
                 The planner lists FIX once in the manifest — the convergence loop
-                (re-spawning fix passes until post-fix review is clean) is
-                automatic at execution time, not something the planner schedules
-                multiple copies of.
+                (re-spawning fix passes until the build-gate passes and post-fix
+                review is clean) is automatic at execution time, not something the
+                planner schedules multiple copies of. Each convergence pass
+                re-runs the build-gate before its post-fix review.
+
+                GATE FAIL: failures route to the responsible fix agent (logic/
+                test failures) or a quick-fix agent (trivial compile errors);
+                the gate re-runs. ONE re-run allowed; a second consecutive FAIL
+                escalates to a full fix pass (synthesis-grid + prior-attempt
+                context). The gate MUST PASS before post-fix REVIEW starts.
+                GATE SKIPPED only when no fix stage runs or the project has no
+                build/test infra (TEST=NONE justification). Machine-constrained
+                repos (operator no-execution constraint): the gate runs bounded
+                verification (changed targets only, -j1, memory caps) or reports
+                GATE NOT RUN: constraint and the workflow falls back to the
+                pre-gate protocol.
 
                  CONVERGENCE: If post-fix VERIFY produces CONFIRMED MEDIUM+
                  findings in the synthesis grid, the fix is incomplete. Spawn a new
-                 fix pass (fix agents → post-fix review → conditional verify) for
-                 the confirmed findings. This repeats until post-fix review
-                 produces zero MEDIUM+ findings and VERIFY is skipped. The FIX
-                 brick is a convergence loop — one pass is never final when
+                 fix pass (fix agents → build-gate → post-fix review → conditional
+                 verify) for the confirmed findings. This repeats until post-fix
+                 review produces zero MEDIUM+ findings and VERIFY is skipped. The
+                 FIX brick is a convergence loop — one pass is never final when
                  MEDIUM+ findings survive verification. When convergence is
                  reached (post-fix review is clean), proceed to Delivery —
                  convergence does not end the workflow.
 ├── NONE        No verified findings to fix.
-└── DOMAINS     1 fix agent per domain → post-fix REVIEW matching the REVIEW stage (including second opinions at MEDIUM+ and cross-domain integration reviewers).
+└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW matching the REVIEW stage (including second opinions at MEDIUM+ and cross-domain integration reviewers).
 
 TEST            Run build + test suite. Single agent, default model — mechanical.
 ├── NONE        IMPLEMENT=NONE (no code changed).
@@ -486,6 +506,7 @@ The role catalog for agent assignment is:
 - **Review**: `code-reviewer` — reviews code for bugs, quality, correctness
 - **Review second opinion** (MEDIUM+): language specialist
 - **Fix**: specialist per domain — applies verified fixes
+- **Build-gate**: default model, mechanical — report-only compile + targeted test tripwire between fix agents and post-fix review (GATE PASS/FAIL, modifies nothing)
 - **Adversarial verification (CRITICAL)**: `adversarial-reviewer` — falsifies CRITICAL findings (1:1)
 - **Adversarial verification (HIGH)**: `adversarial-reviewer` — falsifies HIGH findings (1 per 3)
 - **Adversarial verification (MEDIUM)**: `adversarial-reviewer` — falsifies MEDIUM findings (1 per 8)
