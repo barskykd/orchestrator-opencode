@@ -347,6 +347,10 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                 Early-exit: if extraction finds 0 findings, skip synthesis — nothing to verify.
                 Always runs when DISCOVER, REVIEW, RESEARCH, or post-fix review produced findings with code-level references.
                 When CONFIRMED findings exist at MEDIUM or above, FIX=DOMAINS must follow.
+                POST-FIX GRIDS: classify each CONFIRMED finding as CODE-FIX (code
+                defect — re-triggers the fix pass) or TEST-UPDATE (test asserting
+                pre-fix behavior — routes to the TEST-UPDATE sub-stage after
+                convergence, does NOT re-trigger the code-fix pass).
 
 CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The planner
                 sets the iteration CEILING; whether an iteration actually runs is decided
@@ -471,17 +475,30 @@ FIX             Apply verified findings. Always 3-4 sequential stages — includ
                 GATE NOT RUN: constraint and the workflow falls back to the
                 pre-gate protocol.
 
-                 CONVERGENCE: If post-fix VERIFY produces CONFIRMED MEDIUM+
+                 CONVERGENCE: If post-fix VERIFY produces CONFIRMED CODE-FIX
                  findings in the synthesis grid, the fix is incomplete. Spawn a new
                  fix pass (fix agents → build-gate → post-fix review → conditional
-                 verify) for the confirmed findings. This repeats until post-fix
-                 review produces zero MEDIUM+ findings and VERIFY is skipped. The
-                 FIX brick is a convergence loop — one pass is never final when
-                 MEDIUM+ findings survive verification. When convergence is
-                 reached (post-fix review is clean), proceed to Delivery —
-                 convergence does not end the workflow.
+                 verify) for the confirmed CODE-FIX findings. This repeats until
+                 post-fix review produces zero CONFIRMED CODE-FIX findings and
+                 VERIFY is skipped. TEST-UPDATE findings (tests asserting pre-fix
+                 behavior) do NOT re-trigger the code-fix pass — they accumulate
+                 in the grid and route to the TEST-UPDATE sub-stage after
+                 convergence. The FIX brick is a convergence loop — one pass is
+                 never final when CODE-FIX findings survive verification. When
+                 convergence is reached (post-fix review is clean), proceed to
+                 TEST-UPDATE — convergence does not end the workflow.
+
+                 TEST-UPDATE (post-convergence sub-stage, execution-triggered):
+                 when the post-fix VERIFY grid contains TEST-UPDATE findings or
+                 CONFIRMED fixes lack regression tests, ONE agent (test-automator
+                 or the domain's language specialist) updates the stale tests and
+                 writes regression tests pinning the fixes. PRIOR CONTEXT = the
+                 full synthesis grid; WRITABLE FILES = the named test files; does
+                 NOT touch production code. Followed by a build-gate re-run and 1
+                 review agent (no adversarial pipeline for test-only changes).
+                 The final TEST brick remains the acceptance gate.
 ├── NONE        No verified findings to fix.
-└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW matching the REVIEW stage (including second opinions at MEDIUM+ and cross-domain integration reviewers).
+└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW matching the REVIEW stage (including second opinions at MEDIUM+ and cross-domain integration reviewers) → TEST-UPDATE (conditional, post-convergence).
 
 TEST            Run build + test suite. Single agent, default model — mechanical.
 ├── NONE        IMPLEMENT=NONE (no code changed).
@@ -507,6 +524,7 @@ The role catalog for agent assignment is:
 - **Review second opinion** (MEDIUM+): language specialist
 - **Fix**: specialist per domain — applies verified fixes
 - **Build-gate**: default model, mechanical — report-only compile + targeted test tripwire between fix agents and post-fix review (GATE PASS/FAIL, modifies nothing)
+- **Test-update**: `test-automator` or the domain's language specialist — updates stale tests + writes regression tests after fix convergence (execution-triggered, not planned)
 - **Adversarial verification (CRITICAL)**: `adversarial-reviewer` — falsifies CRITICAL findings (1:1)
 - **Adversarial verification (HIGH)**: `adversarial-reviewer` — falsifies HIGH findings (1 per 3)
 - **Adversarial verification (MEDIUM)**: `adversarial-reviewer` — falsifies MEDIUM findings (1 per 8)

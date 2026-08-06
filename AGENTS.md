@@ -334,7 +334,7 @@ The `task` tool runs the agent as a native opencode subagent (isolated child ses
 | **Discovery** (review, audit, analysis of existing code) | Specialist agent with dedicated context focused on one domain. When a stage has independent subtasks (different files, modules, concerns), spawn one agent per subtask — as many as the task naturally decomposes into, maximum 10 in parallel. At MEDIUM+ severity: second opinion agent runs in parallel with complementary specialist `.md`. |
 | **Implementation** (write code) | Single agent writes code directly to original files. For multi-domain changes, one agent per domain writes to respective files in parallel. |
 | **Review** (after implementation or fix) | Reviews implementation or fix for bugs, quality, correctness. Every implementation and every fix MUST be followed by a review agent. At MEDIUM+ severity: second opinion agent runs in parallel with language specialist `.md`. |
-| **Fixing** (fix verified findings) | Applies known fixes mechanically. Fix ALL confirmed findings from the synthesis grid. Every fix MUST be followed by a build-gate and a post-fix review agent. |
+| **Fixing** (fix verified findings) | Applies known fixes mechanically. Fix ALL confirmed findings from the synthesis grid. Every fix MUST be followed by a build-gate and a post-fix review agent; stale tests and missing regression tests route to a test-update agent after convergence. |
 | **Adversarial verification** (falsification) | For CRITICAL findings — 1 agent per finding (1:1). For HIGH findings — 1 agent per batch of 3 findings. For MEDIUM findings — 1 agent per batch of 8 findings. All use exhaustive falsification: read cited code, search for counter-evidence at every level (same function, caller, framework, type system, tests). Label CONFIRMED / REJECTED / WEAKENED with evidence. Extraction and synthesis agents also default model. |
 | **Test** (build + test suite) | Runs build and test commands, fixes compilation/test failures, reports results. |
 | **Quick-fix** (minor finishing, reverts) | Short, informal fix for workflow-internal issues — fixing broken agent output or reverting incorrect edits. Not a substitute for the planning pipeline. No verification. If wrong, diagnose and retry once. If retry also fails: escalate to full IMPLEMENT → REVIEW → VERIFY for HIGH/CRITICAL changes; revert for everything else. |
@@ -667,6 +667,10 @@ VERIFY          Verify findings from DISCOVER, REVIEW, RESEARCH (code-ref findin
                 Early-exit: 0 findings after extraction → skip synthesis.
                 Always runs when DISCOVER, REVIEW, RESEARCH, or post-fix review produced findings with code-level references.
                 When CONFIRMED findings exist at MEDIUM+, FIX=DOMAINS must follow.
+                POST-FIX GRIDS: classify each CONFIRMED finding as CODE-FIX
+                (code defect — re-triggers the fix pass) or TEST-UPDATE (test
+                asserting pre-fix behavior — does NOT re-trigger the code-fix
+                pass; routes to the TEST-UPDATE sub-stage after convergence).
 
 CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The planner
                 sets the iteration CEILING; whether an iteration actually runs is decided
@@ -783,17 +787,31 @@ FIX             Apply verified findings. Always 3-4 sequential stages — includ
                 only, `-j1`, memory caps) or reports `GATE NOT RUN: constraint`
                 and the workflow falls back to the pre-gate protocol.
 
-                CONVERGENCE: If post-fix VERIFY produces CONFIRMED MEDIUM+
+                CONVERGENCE: If post-fix VERIFY produces CONFIRMED CODE-FIX
                 findings in the synthesis grid, the fix is incomplete. Spawn a new
                 fix pass (fix agents → build-gate → post-fix review → conditional
-                verify) for the confirmed findings. This repeats until post-fix
-                review produces zero MEDIUM+ findings and VERIFY is skipped. The
-                FIX brick is a convergence loop — one pass is never final when
-                MEDIUM+ findings survive verification. When convergence is
-                reached (post-fix review is clean), proceed to Delivery —
+                verify) for the confirmed CODE-FIX findings. This repeats until
+                post-fix review produces zero CONFIRMED CODE-FIX findings and
+                VERIFY is skipped. TEST-UPDATE findings (tests asserting pre-fix
+                behavior) do NOT re-trigger the code-fix pass — they accumulate in
+                the grid and route to the TEST-UPDATE sub-stage (below). The FIX
+                brick is a convergence loop — one pass is never final when
+                CODE-FIX findings survive verification. When convergence is
+                reached (post-fix review is clean), proceed to TEST-UPDATE —
                 convergence does not end the workflow.
+
+                TEST-UPDATE (post-convergence sub-stage, execution-triggered):
+                when the post-fix VERIFY grid contains TEST-UPDATE findings or
+                CONFIRMED fixes lack regression tests, ONE agent (test-automator
+                or the domain's language specialist) updates the stale tests and
+                writes regression tests pinning the CONFIRMED fixes. PRIOR
+                CONTEXT = the full synthesis grid; WRITABLE FILES = the named
+                test files; does NOT touch production code. Followed by a
+                build-gate re-run and 1 review agent (no weakened pins, no scope
+                creep; no adversarial pipeline for test-only changes). The final
+                TEST brick remains the acceptance gate.
 ├── NONE        No verified findings.
-└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW → conditional VERIFY.
+└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW → conditional VERIFY → TEST-UPDATE (conditional).
 
 TEST            Run build + test suite. Always single agent, default model (mechanical).
 ├── NONE        IMPLEMENT=NONE. Or planner skips with justification (no test infra).
@@ -915,11 +933,11 @@ DISCOVER=NONE requires `size=tiny` (nothing to discover) OR `size=small` with pl
 
 ##### Mid-Execution Amendment
 
-After VERIFY produces confirmed findings at MEDIUM severity or above: if the manifest does not include IMPLEMENT, the lead auto-adds IMPLEMENT followed by FIX (which includes internal BUILD-GATE + post-fix REVIEW + conditional VERIFY). This is unconditional — all confirmed MEDIUM+ findings are fixed regardless of task intent. LOW findings are reported but not auto-fixed.
+After VERIFY produces confirmed findings at MEDIUM severity or above: if the manifest does not include IMPLEMENT, the lead auto-adds IMPLEMENT followed by FIX (which includes internal BUILD-GATE + post-fix REVIEW + conditional VERIFY + conditional TEST-UPDATE). This is unconditional — all confirmed MEDIUM+ findings are fixed regardless of task intent. LOW findings are reported but not auto-fixed.
 
 When auto-adding IMPLEMENT or planning implementation stages from the synthesis grid, count confirmed MEDIUM+ findings per file. Apply the edit-density split (Domain Splitting step 3): if any single file carries more than 8 findings or any domain carries more than 12 total findings, split that domain's implementation into 2 agents.
 
-After a FIX stage's post-fix VERIFY produces CONFIRMED MEDIUM+ findings in the synthesis grid: auto-add another FIX pass (fix agents → build-gate → post-fix review → conditional verify). This repeats until post-fix review produces zero MEDIUM+ findings and VERIFY is skipped. This is mechanical — the FIX brick is a convergence loop, and surviving MEDIUM+ findings mean the fix was incomplete. IMPLEMENT already being in the manifest does not block this — FIX convergence re-entry is independent of the IMPLEMENT amendment.
+After a FIX stage's post-fix VERIFY produces CONFIRMED CODE-FIX findings in the synthesis grid: auto-add another FIX pass (fix agents → build-gate → post-fix review → conditional verify). This repeats until post-fix review produces zero CONFIRMED CODE-FIX findings and VERIFY is skipped. This is mechanical — the FIX brick is a convergence loop, and surviving CODE-FIX findings mean the fix was incomplete. TEST-UPDATE findings (tests asserting pre-fix behavior) do NOT re-trigger the code-fix pass; they route to the TEST-UPDATE sub-stage after convergence. IMPLEMENT already being in the manifest does not block this — FIX convergence re-entry is independent of the IMPLEMENT amendment.
 
 **Implementation stages** use write → review structure:
 ```
@@ -936,6 +954,7 @@ After a FIX stage's post-fix VERIFY produces CONFIRMED MEDIUM+ findings in the s
   Stage N+1: Build-gate — 1 mechanical agent (compiles + runs tests covering changed files, report-only, GATE PASS/FAIL)
   Stage N+2: Post-fix review — N agents (1 per domain)
   Stage N+3: Verification — severity-routed (only if fix review found MEDIUM+ findings)
+  Stage N+4: Test-update — 1 agent (only if TEST-UPDATE findings or missing regression tests; updates stale tests + writes regression tests for fixes; gate re-run + 1 reviewer follows)
 ```
 
 **Delegation mapping (MANDATORY in every plan):** During planning you MUST answer:
@@ -1007,7 +1026,7 @@ All agents use the opencode default model. The `-m` flag is not used — to pin 
 **How it works for implementation stages:**
 1. **Write step:** A single agent writes the implementation directly to the original files. The agent reads the full task, understands the requirements, and produces a complete implementation.
 2. **Review step:** A single review agent reviews the implementation — same task description, independent assessment.
-3. **Fix and iterate:** The review report is processed by the verification pipeline to produce a verified checklist. ALL verified findings are fixed via fix-agents split by domain. The lead does NOT fix findings directly, regardless of how few or how trivial. Every fix MUST be followed by a build-gate and a post-fix review agent. Every review MUST be followed by verification — review findings are not deliverable until they've been verified. The review → fix → re-review loop iterates until the post-fix review produces zero MEDIUM+ findings — this FIX-brick convergence is the final gate.
+3. **Fix and iterate:** The review report is processed by the verification pipeline to produce a verified checklist. ALL verified findings are fixed via fix-agents split by domain. The lead does NOT fix findings directly, regardless of how few or how trivial. Every fix MUST be followed by a build-gate and a post-fix review agent. Every review MUST be followed by verification — review findings are not deliverable until they've been verified. The review → fix → re-review loop iterates until the post-fix review produces zero CONFIRMED CODE-FIX findings — this FIX-brick convergence is the final gate; TEST-UPDATE findings route to the test-update agent after convergence.
 
 **Spawn:**
 ```bash
@@ -1042,6 +1061,7 @@ Types: `review` (coordination-review + severity + quality-rules-review), `code` 
 - Verification: `sN-extract`, `sN-adv-{domain}` (adversarial — 1:1 for CRITICAL, 1 per 3 for HIGH, 1 per 8 for MEDIUM), `sN-adv-cross` (cross-domain adversarial), `sN-synth`
 - Fix: `sN-fix-{domain}`
 - Build-gate: `sN-gate` (e.g., `s7-gate` — report-only build/test tripwire between fix agents and post-fix review)
+- Test-update: `sN-test-update` (e.g., `s8-test-update` — updates stale tests + writes regression tests after fix convergence)
 - Test: `sN-test`
 - Iterations: `s{N}i{K}-name` (e.g., `s2i1-researcher`, `s2i2-researcher`)
 - Respawns: re-issue the `task` call with corrected configuration. Add `-r2`, `-r3` suffix to the name when re-delegating a failed agent (e.g., `s2i1-reviewer-r2` = stage 2 iteration 1 reviewer, respawn attempt 2). Maximum 3 respawn attempts per agent.
@@ -1129,6 +1149,8 @@ Surfaces PRIOR_FIX_ATTEMPT regression signals from extraction. When a file has �
 
 Also sanity-checks severity assignments against the severity classification criteria — if a finding's severity appears mismatched (e.g., "SQL injection" labeled MEDIUM), flag it as CHALLENGED. Challenged findings are re-routed through adversarial verification. Exception: documentation-domain challenged findings skip adversarial — documentation severity is inherently subjective (is "10 missing API docs" HIGH or MEDIUM?) and adversarial review of severity ratings adds no meaningful verification. Documentation-domain challenged findings stay at their challenged severity; the lead accepts the downgrade directly.
 
+For POST-FIX grids, the synthesis agent additionally classifies each CONFIRMED finding as **CODE-FIX** (code defect — re-triggers the fix pass) or **TEST-UPDATE** (test asserting pre-fix behavior — does NOT re-trigger the code-fix pass; routes to the TEST-UPDATE sub-stage after convergence).
+
 **If the synthesis grid shows zero CONFIRMED findings at MEDIUM or above** (all MEDIUM+ findings were REJECTED, all were DROPPED, or only LOW-severity survivors remain), FIX is SKIPPED — there is nothing significant to fix. LOW verified findings are acknowledged in the synthesis as non-blocking. The lead writes the synthesis with `FIX SKIPPED: Zero MEDIUM+ verified findings — nothing to fix.` This is mechanical — no lead judgment.
 
 **Verification is MANDATORY** after every discovery, review (including cross-domain integration review), post-fix review, and RESEARCH stage whose findings include code-level references. Exception: stages producing findings without code-level references (web research, pure analysis, documentation reviews) — lead may mark verification as SKIPPED with explicit justification.
@@ -1151,8 +1173,8 @@ Also sanity-checks severity assignments against the severity classification crit
 #### Between Stages
 
 1. Write `tmp/stage-N-synthesis.md` — verified results from the synthesis grid, decisions, context for next stage
-2. **Mid-execution amendment (new findings):** If VERIFY produces confirmed findings at MEDIUM severity or above and IMPLEMENT is NOT in the manifest, the lead auto-adds IMPLEMENT followed by FIX (always 3-4 sequential stages: fix + build-gate + post-fix review + conditional VERIFY). This is unconditional — all confirmed MEDIUM+ findings are fixed regardless of task intent. LOW findings are reported but not auto-fixed. This is mechanical — verify the condition, add the stages.
-   **FIX convergence (incomplete fixes):** After a FIX stage's post-fix VERIFY produces CONFIRMED MEDIUM+ findings in the synthesis grid, auto-add another FIX pass regardless of whether IMPLEMENT is already in the manifest. IMPLEMENT presence does not block FIX convergence — surviving MEDIUM+ findings mean the fix was incomplete. Repeat until post-fix review produces zero MEDIUM+ findings and VERIFY is skipped. Each convergence pass re-runs the build-gate before its post-fix review. When convergence is reached, proceed to Delivery — convergence does not end the workflow.
+2. **Mid-execution amendment (new findings):** If VERIFY produces confirmed findings at MEDIUM severity or above and IMPLEMENT is NOT in the manifest, the lead auto-adds IMPLEMENT followed by FIX (always 3-4 sequential stages: fix + build-gate + post-fix review + conditional VERIFY, plus conditional TEST-UPDATE). This is unconditional — all confirmed MEDIUM+ findings are fixed regardless of task intent. LOW findings are reported but not auto-fixed. This is mechanical — verify the condition, add the stages.
+   **FIX convergence (incomplete fixes):** After a FIX stage's post-fix VERIFY produces CONFIRMED CODE-FIX findings in the synthesis grid, auto-add another FIX pass regardless of whether IMPLEMENT is already in the manifest. IMPLEMENT presence does not block FIX convergence — surviving CODE-FIX findings mean the fix was incomplete. Repeat until post-fix review produces zero CONFIRMED CODE-FIX findings and VERIFY is skipped. Each convergence pass re-runs the build-gate before its post-fix review. TEST-UPDATE findings (tests asserting pre-fix behavior) do NOT re-trigger the code-fix pass. After convergence, if the grid contains TEST-UPDATE findings or CONFIRMED fixes lack regression tests, auto-add a TEST-UPDATE stage (1 agent: test-automator or the domain's language specialist — updates stale tests + writes regression tests pinning the fixes; PRIOR CONTEXT = the synthesis grid; WRITABLE FILES = the named test files; does NOT touch production code), followed by a build-gate re-run and 1 review agent (no weakened pins, no scope creep; no adversarial pipeline for test-only changes). When convergence is reached, proceed to Delivery — convergence does not end the workflow.
    **Regression-aware fix scrutiny:** When the synthesis grid flags any file as a repeat-regression hotspot (≥3 PRIOR_FIX_ATTEMPT findings on the same file), that file's fix agent MUST receive a second-opinion reviewer — regardless of finding severity on that file. Files with a demonstrated pattern of incomplete fixes from prior production check runs require elevated review to break the fix-regress cycle.
 
    When the synthesis grid flags a regressing function (≥3 PRIOR_FIX_ATTEMPT findings clustered within ~40 lines of the same function), the lead spawns a single pre-fix audit agent BEFORE the fix stage. The audit agent:
@@ -1248,7 +1270,7 @@ PRIOR CONTEXT for iter 2 without iter 1's synthesis first.
 
 #### Delivery
 
-**Before delivery:** Read `tmp/glm-plan.md`. Confirm every planned stage is complete or explicitly marked SKIPPED with justification. A stage silently skipped = not delivered yet. Execute it or update the plan. If any code was changed during the fix stage — by fix-agents — confirm that the build-gate passed and that post-fix review and verification both ran (verification runs only if review found new findings). Code changes without downstream verification are not deliverable. If any synthesis grid contains CONFIRMED findings, confirm knowledge harvesting ran and the report (`tmp/knowledge-harvest-report.md`) was produced. The user's task instructions (commit, push, report) are the final step after all stages complete — they do not override the mandatory stages that must run first.
+**Before delivery:** Read `tmp/glm-plan.md`. Confirm every planned stage is complete or explicitly marked SKIPPED with justification. A stage silently skipped = not delivered yet. Execute it or update the plan. If any code was changed during the fix stage — by fix-agents — confirm that the build-gate passed and that post-fix review and verification both ran (verification runs only if review found new findings), and that the TEST-UPDATE stage (if triggered by TEST-UPDATE findings or missing regression tests) completed with a green gate re-run. Code changes without downstream verification are not deliverable. If any synthesis grid contains CONFIRMED findings, confirm knowledge harvesting ran and the report (`tmp/knowledge-harvest-report.md`) was produced. The user's task instructions (commit, push, report) are the final step after all stages complete — they do not override the mandatory stages that must run first.
 
 Before delivery, mechanically verify all mid-execution decisions:
 - If any conditional VERIFY was skipped: read the stage's review reports.
