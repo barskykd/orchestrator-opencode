@@ -11,7 +11,7 @@ A single agent working alone has one analytical lens. Two different specialists 
 - **Iterative convergence** — The planner sets an iteration ceiling per stage (ONCE default, LOOP for highly ambiguous or production-critical work); whether an iteration actually fires is decided mechanically by the prior VERIFY synthesis grid (≥1 CONFIRMED HIGH/CRITICAL finding). Iterations use genuinely different specialists — no agent reappears, no role-swapping tricks. Each iteration gets its own full verify cycle
 - **Smart scoping** — A three-agent planning pipeline researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, change type), then builds a custom workflow from available bricks. A cosmetic fix gets a handful of agents; a critical multi-domain refactor gets full adversarial verification with second opinions and cross-domain intersection audits
 - **External research** — When tasks touch unfamiliar technology, compliance requirements, or authoritative references outside the codebase, RESEARCH agents gather information first (web search, docs, standards). Research findings become PRIOR CONTEXT for discovery agents — the codebase audit knows what to look for
-- **Domain experts** — 112+ specialized agents, each with domain-specific checklists and anti-patterns. At MEDIUM+ severity, every discovery and review stage gets a second opinion from a **different** specialist — two independent analytical frameworks on the same code
+- **Domain experts** — 112+ specialized agents, each with domain-specific checklists and anti-patterns. At MEDIUM+ severity, every discovery and post-implementation review stage gets a second opinion from a **different** specialist — two independent analytical frameworks on the same code (post-fix review is primary-only by measurement)
 
 ## Agent Quality — Real-Project Tested
 
@@ -80,8 +80,9 @@ You ask: "Add dark mode" or "Fix the payment race condition"
          │       Cross-domain reviewers check integration points
          ▼
       Fixes      All confirmed findings applied mechanically
-         │       by domain specialists, then independently
-         │       reviewed. If reviews find MEDIUM+ issues →
+         │       by domain specialists, verified by a build-gate,
+         │       then independently reviewed (primary-only). If
+         │       reviews find MEDIUM+ issues →
          │       fix again until clean
          ▼
       Test       Build + test suite. Failures fixed. 100%
@@ -98,7 +99,7 @@ Everything runs autonomously — the lead coordinates, agents do the work, verif
 
 **Planning pipeline** — Before any stage agents run, a three-agent pipeline (agentic-planner + volume-splitter + agent-organizer) researches the codebase, classifies the task on 5 axes, selects workflow bricks, splits domains by specialist and volume, and produces a verified plan with exact file paths and agent assignments. No bad plan reaches the execution phase.
 
-**Agents** — Specialist AI workers. Each one gets a narrow, well-defined task with a specific persona (`swift-pro`, `code-reviewer`, `security-reviewer`). They work independently and write structured reports. At MEDIUM+ severity, every discovery and review stage gets a second opinion — a different specialist checking the same code through a different analytical framework (proven 87% complementarity).
+**Agents** — Specialist AI workers. Each one gets a narrow, well-defined task with a specific persona (`swift-pro`, `code-reviewer`, `security-reviewer`). They work independently and write structured reports. At MEDIUM+ severity, every discovery and post-implementation review stage gets a second opinion — a different specialist checking the same code through a different analytical framework (proven 87% complementarity). Post-fix review is primary-only by measurement (zero HIGH+ unique yield).
 
 **RESEARCH brick** — Gathers information beyond what the codebase provides: web search, documentation, standards, community knowledge, git history, or deep codebase exploration. Placed before DISCOVER when research findings inform what to look for in code. Research agents scale by topic specialization, not second opinions. Findings carry confidence tiers (CONFIRMED/LIKELY/TENTATIVE/SPECULATIVE) that propagate through PRIOR CONTEXT and delivery. VERIFY is skipped for purely informational findings; runs when findings include code-level references.
 

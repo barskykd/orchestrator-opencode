@@ -458,7 +458,7 @@ FIX             Apply verified findings. Always 3-4 sequential stages — includ
                      Report-only — modifies nothing, fixes nothing, reviews
                      nothing. Workflow-internal artifact, not a finding source
                      (no severity classification, no adversarial routing).
-                  3. Post-fix REVIEW (same variant/domain split as the REVIEW stage — includes second opinions at MEDIUM+ severity per domain, and cross-domain integration reviewers for triaged boundaries). Reviewers receive the gate status as one-line PRIOR CONTEXT.
+                  3. Post-fix REVIEW (primary-only per domain — NO second opinions, per Second Opinion Guidelines; cross-domain integration reviewers for triaged boundaries still apply). Reviewers receive the gate status as one-line PRIOR CONTEXT.
                   4. VERIFY — only if post-fix REVIEW found findings at MEDIUM severity or above
                 The planner lists FIX once in the manifest — the convergence loop
                 (re-spawning fix passes until the build-gate passes and post-fix
@@ -501,7 +501,7 @@ FIX             Apply verified findings. Always 3-4 sequential stages — includ
                  review agent (no adversarial pipeline for test-only changes).
                  The final TEST brick remains the acceptance gate.
 ├── NONE        No verified findings to fix.
-└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW matching the REVIEW stage (including second opinions at MEDIUM+ and cross-domain integration reviewers) → TEST-UPDATE (conditional, post-convergence).
+└── DOMAINS     1 fix agent per domain → BUILD-GATE → post-fix REVIEW (primary-only per domain, no second opinions; cross-domain integration reviewers for triaged boundaries) → TEST-UPDATE (conditional, post-convergence).
 
 TEST            Run build + test suite. Single agent, default model — mechanical.
 ├── NONE        IMPLEMENT=NONE (no code changed).
