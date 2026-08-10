@@ -53,6 +53,8 @@ REPORT FORMAT:
 | # | Severity | File:Line | Description |
 |---|----------|-----------|-------------|
 [For each HIGH/CRITICAL: include confidence level + verification evidence (what you checked and found)]
+### Investigated-and-Rejected
+[Every suspected issue you examined and dismissed, with the dismissal reasoning + file:line. Dismissals are re-examined by verification — document them honestly. If nothing was dismissed, write "NONE".]
 ### MUST ANSWER Responses
 [Each answered with file:line evidence. Positive confirmations go HERE, not in Findings]
 ### Gaps

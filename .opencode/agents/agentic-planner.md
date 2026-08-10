@@ -27,11 +27,11 @@ Before writing a single stage, you MUST understand the project deeply. Unlike th
 
 0. **Ignore stale artifacts** — Your work is always a fresh plan, never a continuation. Ignore `session.md` (contains stale checkpoints from past sessions), old `tmp/glm-plan.md`, old agent reports in `tmp/`, and any `knowledge.md` entries that describe past production check outcomes (e.g. "Run 5: fixed 47 findings at..." entries tagged `context`). DO read `knowledge.md` entries in `gotcha`, `pattern`, and `discovery` categories tagged with domain labels relevant to this project — these are accumulated reusable project knowledge (e.g. "IEEE 754: NaN passes through < checks — guard with std::isnan()" tagged `numerical`). Run `memory.sh list` and `memory.sh search` to retrieve them. If you see old plan files or checkpoint entries, treat them as irrelevant — you are producing a new plan from scratch.
 1. **Explore the full codebase structure** — glob for all source files, run `wc -l` on each source directory for exact counts, map directories. Record exact LOC in the plan — these feed volume splitting decisions
-1b. **Identify external references** — grep the codebase for named standards, library APIs, directives, file formats, protocols, and author-year or ISBN citations. Build the External Reference Inventory from these systematic results, not from what you happen to notice during ad-hoc file reads. Do NOT consolidate versions — each named version (e.g., "LAS 1.2" and "LAS 3.0") gets its own row with its own research question. Apply the precision criterion per row (see RESEARCH brick catalog): rows are candidates; a row becomes a research agent only when verification requires external documentation the domain specialist lacks. Document every skip with a one-line reason.
+1b. **Identify external references** — grep the codebase for named standards, library APIs, directives, file formats, protocols, and author-year or ISBN citations. Build the External Reference Inventory from these systematic results, not from what you happen to notice during ad-hoc file reads. Do NOT consolidate versions — each named version (e.g., "LAS 1.2" and "LAS 3.0") gets its own row with its own research question. Apply the precision criterion per row (see RESEARCH brick catalog): rows are candidates; a row becomes a research agent only when verification requires external documentation the executor lacks. Document every skip with a one-line reason.
 2. **Read key source files** — at minimum: main entry points, build system, test infrastructure, README
 3. **Read the agent INDEX completely** — `.opencode/agents/INDEX.md` — know EVERY available agent and its specialization
 4. **Read the planning rules and brick catalog** — AGENTS.md sections: Brick Catalog, Classification, Planning rules, Verification, Agent Preparation
-5. **Examine dependencies** — package files, lock files, external libraries. Every runtime dependency is a candidate reference (criterion a), but the precision criterion decides whether it gets a research agent: standard usage of a generic, well-documented library (numpy, chardet, stdlib) is possessed by the domain specialist and gets NO agent (document the skip with a one-line reason). Named formats/protocols/standards and algorithms from dependencies DO get agents.
+5. **Examine dependencies** — package files, lock files, external libraries. Every runtime dependency is a candidate reference (criterion a), but the precision criterion decides whether it gets a research agent: standard usage of a generic, well-documented library (numpy, chardet, stdlib) is possessed by the executor (training + planner context) and gets NO agent (document the skip with a one-line reason). Named formats/protocols/standards and algorithms from dependencies DO get agents.
 6. **Check test infrastructure** — test runner, coverage, test data
 7. **Verify build and test commands** — actually run the build and test commands once to confirm they work. If they fail, note the exact error in your plan and flag as a blocker. If they pass, write the verified working commands in the plan. Assess parallel-safety for per-agent verification: can targeted test files run concurrently (standalone, no shared state) or is per-agent verification limited to compile/syntax checks (tests need a DB, ports, or shared build dirs)? Write this as the one-line Parallel-safety note in the plan's Build & Test Commands section (Phase 6). **Skip this step if the project's own AGENTS.md or README explicitly states the commands should not be run locally** (e.g. connects to remote servers, requires unavailable hardware, or explicitly says "do not build"). If skipped, note the reason in the plan.
 8. **Verify structural understanding.** Before writing the plan, confirm and document:
@@ -51,8 +51,8 @@ Assess the task on 5 independent axes by reading the actual code. Do NOT use key
 
 | Axis | Values | What to assess |
 |------|--------|---------------|
-| **Size** | tiny / small / medium / large | Files affected, lines of change expected. Count source files and source LOC only — not tests, not configs. Mechanical thresholds: tiny = single file + <10 lines. small = ≤10 files AND ≤3,000 LOC. medium = ≤15 files AND ≤3,500 LOC. large = exceeds either threshold OR spans multiple specialist domains. (These thresholds mirror the volume-split limits — a task that would require splitting discovery agents is large by definition.) |
-| **Domain breadth** | single / few (2-3) / wide (4+) | Distinct source-code specialists (languages, frameworks) — not packages and not audit roles. If all affected files use the same specialist (e.g. all swift-pro), it's single-domain regardless of how many packages or architectural layers the task touches. Test-automator, documentation-pro, and security-reviewer are audit lenses applied to the same source code; they do not increase domain breadth. |
+| **Size** | tiny / small / medium / large | Files affected, lines of change expected. Count source files and source LOC only — not tests, not configs. Mechanical thresholds: tiny = single file + <10 lines. small = ≤10 files AND ≤3,000 LOC. medium = ≤15 files AND ≤3,500 LOC. large = exceeds either threshold OR spans multiple domains. (These thresholds mirror the volume-split limits — a task that would require splitting discovery agents is large by definition.) |
+| **Domain breadth** | single / few (2-3) / wide (4+) | Distinct languages/frameworks — not packages and not audit roles. If all affected files use the same language/framework, it is single-domain regardless of how many packages or architectural layers the task touches. Audit lenses (test quality, security, documentation, performance) apply to the same source code; they do not increase domain breadth. |
 | **Ambiguity** | none / low / medium / high | How clear is the desired outcome? Known pattern vs. exploratory? |
 | **Severity** | none / low / medium / high / critical | Production and product impact (see severity guide below) |
 | **Change type** | cosmetic / config / bug / feature / refactor / analysis | Nature of the work |
@@ -137,29 +137,29 @@ RESEARCH        Gather information beyond what the codebase provides.
                 from systematic codebase grep during Phase 1 — not from
                 what you happen to notice in ad-hoc file reads.
 
-                PRECISION CRITERION (applied per candidate, documented per
-                decision): a candidate gets a research agent ONLY when
-                verification requires external documentation the domain
-                specialist does not already possess. Two-part test:
-                  1. NECESSITY: does verifying this code require external
-                     documentation the specialist lacks? (NO → no agent)
-                  2. POSSESSED-KNOWLEDGE: would a research agent produce
-                     anything beyond what the assigned domain specialist
-                     already knows? (NO → no agent)
-                Standard usage of a generic, well-documented library (e.g.
-                numpy array ops, chardet.detect, stdlib) does NOT get a
-                research agent — the domain specialist possesses this; a
-                research agent would only restate public docs and its
-                Discovery Questions would add noise to discovery prompts.
-                Named formats/protocols/standards (LAS, DEV, TLS, SQLite...)
-                and named algorithms/papers DO get agents — byte-level
-                compliance and external semantics are not in the specialist's
-                head. Each named version (e.g., "LAS 1.2" and "LAS 3.0")
-                gets ITS OWN ROW — never consolidate distinct references or
-                versions into one row. Every SKIP must be documented in the
-                plan with a one-line reason (e.g., "numpy — standard usage,
-                python-pro possesses"). The RESEARCH agent count is the
-                number of rows that PASS the precision criterion.
+                 PRECISION CRITERION (applied per candidate, documented per
+                 decision): a candidate gets a research agent ONLY when
+                 verification requires external documentation the executor
+                 does not already possess. Two-part test:
+                   1. NECESSITY: does verifying this code require external
+                      documentation the executor lacks? (NO → no agent)
+                   2. POSSESSED-KNOWLEDGE: would a research agent produce
+                      anything beyond what the executor already possesses
+                      (training + planner context)? (NO → no agent)
+                 Standard usage of a generic, well-documented library (e.g.
+                 numpy array ops, chardet.detect, stdlib) does NOT get a
+                 research agent — the executor possesses this; a
+                 research agent would only restate public docs and its
+                 Discovery Questions would add noise to discovery prompts.
+                 Named formats/protocols/standards (LAS, DEV, TLS, SQLite...)
+                 and named algorithms/papers DO get agents — byte-level
+                 compliance and external semantics are not in the executor's
+                 head. Each named version (e.g., "LAS 1.2" and "LAS 3.0")
+                 gets ITS OWN ROW — never consolidate distinct references or
+                 versions into one row. Every SKIP must be documented in the
+                 plan with a one-line reason (e.g., "numpy — standard usage,
+                 executor possesses"). The RESEARCH agent count is the
+                 number of rows that PASS the precision criterion.
                 Research is cheap; missed external requirements are
                 expensive. RESEARCH builds the reference library that
                 DISCOVER agents consult. RESEARCH may be NONE when no
@@ -203,16 +203,17 @@ RESEARCH        Gather information beyond what the codebase provides.
                 selection) — there, confidence tiers are the best signal
                 available.
 
-                The planner selects agents from the INDEX based on
-                the research type needed — web-searcher (internet),
-                research-analyst (structured analysis), data-researcher
-                (datasets), or a domain specialist (internal codebase
-                exploration). Follows the same conventions as other
-                discovery-oriented bricks: CONVERGE for ambiguous/
-                critical questions, agent exclusion lists across
-                iterations. No second opinions — research agents
-                scale by topic specialization, not analytical
-                complementarity.
+                 The planner selects research agents based on
+                 the research type needed — web-searcher (internet),
+                 research-analyst (structured analysis), data-researcher
+                 (datasets). Research covers EXTERNAL facts only: internal
+                 codebase exploration is executor work (executors read code
+                 themselves), not a research role. Follows the same
+                 conventions as other discovery-oriented bricks: CONVERGE for
+                 ambiguous/critical questions, FOCUS/report exclusion across
+                 iterations. No second opinions — research agents
+                 scale by topic specialization, not analytical
+                 complementarity.
 
                 Findings that map to code references go through the
                 normal VERIFY pipeline. Purely informational findings
@@ -240,8 +241,10 @@ DISCOVER        Pre-change analysis — review/audit existing code before making
 ├── SINGLE      1 agent per domain. Use for: medium+ tasks, OR small
 │               tasks where open questions remain after Phase 1 research.
 │               At MEDIUM+ severity: +1 second opinion agent per domain (parallel).
-│               Default pair: domain specialist (primary) + code-reviewer (second opinion) — planner may override based on task context.
-└── MULTI       N agents, one per domain. Split by specialist, then by volume.
+│               Both agents are executor-high; the second opinion is research-baked
+│               (INJECT) with a complementary-FOCUS report — see the Research
+│               Coverage Map. Never the same FOCUS twice.
+└── MULTI       N agents, one per domain. Split by domain, then by volume.
                 At MEDIUM+: each domain gets a second opinion agent.
 
                 When the task spans 2+ domains with non-trivial coupling (see
@@ -252,32 +255,35 @@ DISCOVER        Pre-change analysis — review/audit existing code before making
                 domain, different lens) — intersection agents trace BETWEEN
                 domains where coupling creates blind spots. At MEDIUM+ severity:
                 each intersection agent gets its own second opinion (a different
-                specialist from the INDEX, not the same type as the intersection
-                agent). Intersection agents audit gaps between domains — second
-                opinions audit the intersection audit itself for missed concerns.
+                FOCUS angle from the intersection's). Intersection agents audit
+                gaps between domains — second opinions audit the intersection
+                audit itself for missed concerns.
                 CRITICAL/HIGH
                 findings from intersection discovery route through cross-domain
                 adversarial verification. Intersection agents MUST be placed in
                 the first DISCOVER stage — never deferred to CONVERGE iterations.
                 CONVERGE inherits the intersection requirement but those are
-                ADDITIONAL agents with different specialists, not replacements
-                for the first-stage ones. Select the best agent for each boundary
-                from the INDEX — planner's choice is authoritative. Intersection
-                agents run in parallel with domain primaries and second opinions
-                within the same stage.
+                ADDITIONAL agents with different FOCUS angles, not replacements
+                for the first-stage ones. Each intersection agent is
+                executor-high, research-baked (INJECT) with a boundary-integrity
+                FOCUS report covering both sides' conventions + bridge semantics.
+                Intersection agents run in parallel with domain primaries and
+                second opinions within the same stage.
 
 IMPLEMENT       Write or modify code.
 ├── NONE        No code change (analysis-only, cosmetic-only).
 ├── SINGLE      1 agent per domain. Writes code directly to original files.
 │               Standard for all code changes.
-└── MULTI       N agents, one per domain. Split by specialist, then by volume.
+└── MULTI       N agents, one per domain. Split by domain, then by volume.
 
 REVIEW          Review code changes.
 ├── NONE        Skip: change type=cosmetic AND severity=none. Or IMPLEMENT=NONE.
 ├── SINGLE      1 agent per domain. Standard.
 │               At MEDIUM+ severity: +1 second opinion agent per domain (parallel).
-│               Default pair: code-reviewer (primary) + language specialist (second opinion) — planner may override based on task context.
-│               When the task spans 2+ domains OR has same-specialist
+│               Both are executor-high; the second opinion is research-baked
+│               (INJECT) with a complementary-FOCUS report (subject to the
+│               2-run measurement gate — see AGENTS.md).
+│               When the task spans 2+ domains OR has same-domain
 │               ALWAYS-tier boundaries (see Boundary Selection),
 │               add cross-domain integration reviewers (same ALWAYS/DEFAULT/SKIP
 │               tiers apply). Focuses ONLY on integration points: API contracts,
@@ -409,44 +415,51 @@ CONVERGE        Repeat DISCOVER, REVIEW, or RESEARCH for additional passes. The 
                 does [SPEC] require?" at broad scope; iter 2 asks
                 "What does [SPEC], Section X, Subsection Y specifically
                 require?" on the area where iter 1 was uncertain.
-                Research iterations inherit the same agent exclusion rules
-                (no agent .md reused across iterations).
-                
-                Iterations inherit ALL mandatory rules from the parent stage type
-                (second opinions at MEDIUM+, intersection agents at triaged boundaries,
-                DISCOVER/REVIEW → VERIFY pipeline, etc.). Intersection agents inherited
-                by CONVERGE are ADDITIONAL agents, not replacements — the first DISCOVER
-                stage must have its own intersection agents for ALWAYS/DEFAULT boundaries;
-                CONVERGE iter 2 adds fresh intersection agents with different specialists.
-                
-                Each iteration gets its own VERIFY stage. Iter 1's VERIFY runs BEFORE
-                iter 2 spawns — the synthesis grid from iter 1's VERIFY determines
-                whether iter 2 spawns (any CONFIRMED HIGH+ in the grid = spawn) AND
-                provides PRIOR CONTEXT for iter 2 agents. Do NOT merge both iterations'
-                verification into a single stage after both iterations complete. The
-                plan structure must be:
-                  Stage N:   DISCOVER iter 1
-                  Stage N+1: VERIFY iter 1
-                  Stage N+2: DISCOVER iter 2 (conditional, PRIOR CONTEXT from N+1)
-                  Stage N+3: VERIFY iter 2
-                
-                When planning CONVERGE stages, run this MECHANICAL exclusion before
-                writing any iter 2 agent assignments:
-                
-                1. List every agent `.md` file used in iter 1 — primaries AND
-                   second opinions AND intersection agents. Write them down.
-                2. These files are EXCLUDED from iter 2 — none may appear as
-                   primary, second opinion, or intersection agent in any role.
-                3. Now choose iter 2 primaries: for each domain, pick a specialist
-                   from the INDEX that is NOT on the exclusion list.
-                4. Now choose iter 2 second opinions: same — must NOT be on the
-                   exclusion list AND must differ from your iter 2 primary.
-                5. Swapping primary↔second-opinion roles between iterations does
-                   NOT count as different — they're still the same pair.
-                
-                Write the exclusion list and the resulting iter 2 assignments
-                explicitly in the plan. Using the same agent or the same pair
-                across iterations is a protocol violation.
+                 Research iterations inherit the same FOCUS/report exclusion rules
+                 (no research report/FOCUS angle reused across iterations).
+                 
+                 Iterations inherit ALL mandatory rules from the parent stage type
+                 (second opinions at MEDIUM+, intersection agents at triaged boundaries,
+                 DISCOVER/REVIEW → VERIFY pipeline, etc.). Intersection agents inherited
+                 by CONVERGE are ADDITIONAL agents, not replacements — the first DISCOVER
+                 stage must have its own intersection agents for ALWAYS/DEFAULT boundaries;
+                 CONVERGE iter 2 adds fresh intersection agents with different FOCUS angles.
+                 
+                 Each iteration gets its own VERIFY stage. Iter 1's VERIFY runs BEFORE
+                 iter 2 spawns — the synthesis grid from iter 1's VERIFY determines
+                 whether iter 2 spawns (any CONFIRMED HIGH+ in the grid = spawn) AND
+                 provides PRIOR CONTEXT for iter 2 agents. Do NOT merge both iterations'
+                 verification into a single stage after both iterations complete. The
+                 plan structure must be:
+                   Stage N:   DISCOVER iter 1
+                   Stage N+1: VERIFY iter 1
+                   Stage N+2: DISCOVER iter 2 (conditional, PRIOR CONTEXT from N+1)
+                   Stage N+3: VERIFY iter 2
+                 
+                 When planning CONVERGE stages, run this MECHANICAL exclusion before
+                 writing any iter 2 agent assignments:
+                 
+                 1. List every research report/FOCUS angle used in iter 1 — primaries
+                    AND second opinions AND intersection agents. Write them down.
+                 2. These FOCUS angles are EXCLUDED from iter 2 — none may appear as
+                    primary, second opinion, or intersection angle in any role.
+                 3. Now choose iter 2 primaries: for each domain, pick FOCUS angles
+                    from the complementary-angle set that are NOT on the exclusion list.
+                 4. Now choose iter 2 second opinions: same — must NOT be on the
+                    exclusion list AND must differ from your iter 2 primary angles.
+                 5. Swapping primary↔second-opinion angles between iterations does
+                    NOT count as different — they're still the same pair.
+                 
+                 Write the exclusion list and the resulting iter 2 assignments
+                 explicitly in the plan. Using the same FOCUS angle or the same pair
+                 across iterations is a protocol violation.
+                 
+                 **RESEARCH EXTENSION on iterations:** when an iteration fires beyond
+                 the pre-baked coverage map (no unused FOCUS rows for its scope),
+                 pre-declare candidate extension FOCUS angles in the manifest so the
+                 lead can spawn fresh research (one research agent per new angle,
+                 same producer rules) without re-planning. The iteration CEILING
+                 remains the only stop — iteration depth is never research-blocked.
 
 FIX             Apply verified findings. Always 3-4 sequential stages — includes build-gate and post-fix review.
                 Always executes in this order when DOMAINS:
@@ -493,8 +506,8 @@ FIX             Apply verified findings. Always 3-4 sequential stages — includ
 
                  TEST-UPDATE (post-convergence sub-stage, execution-triggered):
                  when the post-fix VERIFY grid contains TEST-UPDATE findings or
-                 CONFIRMED fixes lack regression tests, ONE agent (test-automator
-                 or the domain's language specialist) updates the stale tests and
+                 CONFIRMED fixes lack regression tests, ONE agent (executor-high)
+                 updates the stale tests and
                  writes regression tests pinning the fixes. PRIOR CONTEXT = the
                  full synthesis grid; WRITABLE FILES = the named test files; does
                  NOT touch production code. Followed by a build-gate re-run and 1
@@ -517,66 +530,41 @@ All agents use the opencode default model. No dual-model pairs, no model-specifi
 The role catalog for agent assignment is:
 - **Planner**: `agentic-planner` — full research + plan production
 - **Volume splitter** (ALL plans): `volume-splitter` — resolves FILE SCOPES to exact KEY FILES, applies mechanical split/merge rules
-- **Plan organizer** (ALL plans): `agent-organizer` — structural compliance review, exclusion-list cross-check, MUST ANSWER question redistribution
-- **Research**: planner selects from INDEX based on research type — `web-searcher` (internet), `research-analyst` (structured), `data-researcher` (datasets), or domain specialists (internal codebase exploration)
-- **Discovery**: specialist per domain (`python-pro`, `golang-pro`, `security-reviewer`, etc.)
-- **Discovery second opinion** (MEDIUM+): complementary specialist
-- **Discovery intersection** (multi-domain, 2+ domains with non-trivial coupling): planner selects best agent for each boundary from the INDEX. Suggested defaults: `backend-architect` (contract/data flow tracing) or `security-reviewer` (crypto/auth boundaries). Planner's selection is authoritative.
-- **Implementation**: specialist per domain (`python-pro`, `typescript-pro`, etc.) — writes code
-- **Review**: `code-reviewer` — reviews code for bugs, quality, correctness
-- **Review second opinion** (MEDIUM+): language specialist
-- **Fix**: specialist per domain — applies verified fixes
-- **Build-gate**: default model, mechanical — report-only compile + targeted test tripwire between fix agents and post-fix review (GATE PASS/FAIL, modifies nothing)
-- **Test-update**: `test-automator` or the domain's language specialist — updates stale tests + writes regression tests after fix convergence (execution-triggered, not planned)
+- **Plan organizer** (ALL plans): `agent-organizer` — structural compliance review, FOCUS/exclusion-list cross-check, MUST ANSWER question redistribution
+- **Research**: planner selects based on research type — `web-searcher` (internet), `research-analyst` (structured), `data-researcher` (datasets). External facts only — internal codebase exploration is executor work.
+- **Discovery**: `executor-high` — tier per the ONE general rule (PLAIN when the task file carries the research; POINTER/INJECT for gaps; see AGENTS.md Tier rule)
+- **Discovery second opinion** (MEDIUM+): `executor-high` — research-baked (INJECT) with a complementary-FOCUS report from the research stage
+- **Discovery intersection** (multi-domain, 2+ domains with non-trivial coupling): `executor-high` — research-baked (INJECT) with a boundary-integrity-FOCUS report covering both sides' conventions + bridge semantics
+- **Implementation**: `executor-high` — PLAIN when specs/contracts stated; INJECT when it depends on current external facts
+- **Review**: `executor-high` — PLAIN (code + stated specs carry the facts)
+- **Review second opinion** (MEDIUM+): `executor-high` — research-baked (INJECT) with a complementary-FOCUS report, subject to the 2-run measurement gate (see AGENTS.md)
+- **Fix**: `executor-high` — PLAIN (synthesis grid is the context)
+- **Build-gate**: `executor-high`, default model, mechanical — report-only compile + targeted test tripwire between fix agents and post-fix review (GATE PASS/FAIL, modifies nothing)
+- **Test-update**: `executor-high` — updates stale tests + writes regression tests after fix convergence (execution-triggered, not planned)
 - **Adversarial verification (CRITICAL)**: `adversarial-reviewer` — falsifies CRITICAL findings (1:1)
 - **Adversarial verification (HIGH)**: `adversarial-reviewer` — falsifies HIGH findings (1 per 3)
 - **Adversarial verification (MEDIUM)**: `adversarial-reviewer` — falsifies MEDIUM findings (1 per 8)
-- **Verification extraction**: `research-analyst` — deduplicates, classifies findings, tags confidence signals
-- **Verification synthesis**: `research-analyst` — compiles verification grid, challenges severity
-- **Test**: `debugger` or `build-error-resolver` — runs build + tests, fixes failures
+- **Verification extraction**: `verification-analyst` — deduplicates, classifies findings, tags confidence signals
+- **Verification synthesis**: `verification-analyst` — compiles verification grid, challenges severity
+- **Test**: `executor-high` — runs build + tests, fixes failures
 
 ### Phase 4: Domain Splitting
 
 When a task spans multiple domains, split in two stages:
 
-**Step 0: Count domains by specialist diversity, not package count.** A task touching 5 packages that all use `swift-pro` is single-domain. A task touching 2 files in different languages (Python + TypeScript) is few-domain. Domain breadth drives MULTI variants, cross-domain integration review, and agent count.
+**Step 0: Count domains by language/framework diversity, not package count.** A task touching 5 packages that all use the same language/framework is single-domain. A task touching 2 files in different languages (Python + TypeScript) is few-domain. Domain breadth drives MULTI variants, cross-domain integration review, and agent count.
 
-**Step 1: Split by specialist.** For each file/concern in the task, map to the best specialist agent from the INDEX using THIS table — it is authoritative for primary agent assignment, do not substitute other agents from INDEX.md:
-- Python → `python-pro`
-- TypeScript/JavaScript → `typescript-pro`
-- Rust → `rust-pro`
-- Go → `golang-pro`
-- SQL/database → `postgres-pro` or `sql-pro` (NOT `database-reviewer` — it is PostgreSQL-specific and only valid as a second opinion or reviewer on SQL projects)
-- Security → `security-reviewer`
-- Infrastructure/config → `devops-engineer`
-- Frontend/React → `react-pro` or `frontend-developer`
-- Tests → `test-automator`
-- Documentation → `documentation-pro`
-
-**Mode consideration:** Each agent in INDEX.md has a Mode tag (TRACE/SWEEP/KNOW) from real-project A/B/C testing. When choosing between equally-specialized agents for a domain, prefer the one whose Mode matches the task's cognitive demand:
-- Bug hunting, cross-file tracing, architecture assessment → TRACE
-- Security audit, checklist sweep, idiom review → SWEEP
-- Framework-specific patterns, API/gotcha knowledge → KNOW
-This is a tiebreaker, not a primary criterion — specialization always wins.
-
-**Beyond technology mapping.** The specialist mapping above captures the dominant
-technology per file. For tasks classified as `analysis` or `audit`, the user's
-request may include additional concerns beyond code correctness — security,
-performance, documentation, etc. Each concern EXPLICITLY stated in the user's
-request warrants its own specialist agent. These are audit lenses, not separate
-domains — they do not increase domain breadth.
-
-When the request is generic ("full production check", "audit", "code review")
-without listing specific concerns, default to **source code correctness** plus
-**test quality**. Do NOT infer security, documentation, performance, or other
-concerns the user did not name. Source + test quality on the same language
-stack is still a single-domain project.
+**Step 1: Split by domain.** For each file/concern in the task, identify the domain (language/framework/concern). ALL execution uses the single generic executor (`executor-high`); specialist identity comes from the research stage's FOCUS angles, not from agent files. For each domain:
+- Name the domain (language/framework/concern area).
+- Declare the tier per the ONE general rule: **PLAIN** (the task file carries the research — planner context, contracts, specs) or **RESEARCH-BAKED — POINTER** (external-fact scope; routed report path + Discovery Questions) or **INJECT** (s2, intersections, thin-context primaries; full report injected).
+- For RESEARCH-BAKED domains, add research rows to the Research Coverage Map (§2.1-style rows: scope, agent, FOCUS angle).
+- Audit lenses (test quality, security, documentation, performance) apply to the same source code — they do not increase domain breadth; they map to complementary FOCUS angles on the same research rows (e.g., a security-angle s2 row).
 
 **Step 2: Group into logical scopes.** You provide FILE SCOPES — module-level groupings with rough LOC estimates from Phase 1 research. The volume-splitter (a downstream agent in Stage 0) handles all mechanical work: resolving scopes to exact file paths with `wc -l` counts, applying split/merge rules against the 3,000/3,500 LOC caps, and rewriting FILE SCOPES to exact KEY FILES. Your job is to group files into coherent domains by concern area (auth separate from I/O, core separate from simulation), not to pre-compute exact splits.
 
 Goal: keep each scope under ~3,000 LOC / ~10 files estimated, with narrow overages (up to ~3,500 LOC / ~15 files) acceptable for cohesive modules. If uncertain whether a scope will trigger a mechanical split, estimate conservatively and let the splitter decide.
 
-**Scope overlap at integration boundaries.** When designing scopes for a large single-specialist domain, do NOT cut cleanly between architectural layers — that creates blind spots where no sub-agent reads the interface. Instead, design scopes that intentionally overlap: each scope includes its core files PLUS the integration-layer files that bridge to adjacent scopes. The overlap files count toward both scopes' estimated volume — factor this in when sizing. Intersection agents in DISCOVER are required for boundaries between genuinely different specialists (Python↔C++, Rust↔TypeScript) where neither can assess the other's conventions, AND for same-specialist boundaries meeting the ALWAYS tier (see Boundary Selection).
+**Scope overlap at integration boundaries.** When designing scopes for a large single-domain scope, do NOT cut cleanly between architectural layers — that creates blind spots where no sub-agent reads the interface. Instead, design scopes that intentionally overlap: each scope includes its core files PLUS the integration-layer files that bridge to adjacent scopes. The overlap files count toward both scopes' estimated volume — factor this in when sizing. Intersection agents in DISCOVER are required for boundaries between genuinely different languages/frameworks (Python↔C++, Rust↔TypeScript) where neither domain convention is fully assessable by the other, AND for same-language boundaries meeting the ALWAYS tier (see Boundary Selection).
 
 **Cross-scope boundaries.** When single-domain AND size=large: enumerate scope
 pairs and apply the boundary tier table. Format transformation between scopes
@@ -590,7 +578,7 @@ Beyond raw file counts, consider investigative diversity. If a single scope's MU
 
 #### Boundary Selection for Intersection Agents
 
-When the task spans 2+ domains, identify domain adjacencies during Phase 1 and classify each boundary. **Domains are defined by specialist diversity**, not architectural layering. If all files in two groups map to the same specialist, they are ONE domain — provide overlapping scopes at integration boundaries (see Step 2). Intersection agents in DISCOVER are mandatory for boundaries between DIFFERENT specialist domains (e.g., Python↔C++, Go↔Rust) where neither specialist can fully assess the other side's conventions, AND for same-specialist boundaries meeting the ALWAYS tier criteria below (5+ cross-boundary call sites in 3+ distinct modules; OR data format/encoding transformation at boundary; OR two distinct persistence mechanisms). At same-specialist ALWAYS boundaries, use a contract-tracing specialist (``backend-architect`` or ``code-reviewer`` — a **different** agent ``.md`` than the domain primary) to read both sides of the boundary plus one hop into each module. DEFAULT-tier same-specialist boundaries get intersection agents only when the project has 3+ domains in total.
+When the task spans 2+ domains, identify domain adjacencies during Phase 1 and classify each boundary. **Domains are defined by language/framework diversity**, not architectural layering. If all files in two groups share the same language/framework, they are ONE domain — provide overlapping scopes at integration boundaries (see Step 2). Intersection agents in DISCOVER are mandatory for boundaries between DIFFERENT language/framework domains (e.g., Python↔C++, Go↔Rust) where neither domain fully assesses the other's conventions, AND for same-language boundaries meeting the ALWAYS tier criteria below (5+ cross-boundary call sites in 3+ distinct modules; OR data format/encoding transformation at boundary; OR two distinct persistence mechanisms). At same-language ALWAYS boundaries, use a contract-tracing executor (executor-high with a boundary-integrity FOCUS report — a different FOCUS angle than the domain primary) to read both sides of the boundary plus one hop into each module. DEFAULT-tier same-language boundaries get intersection agents only when the project has 3+ domains in total.
 
 Count cross-boundary references mechanically (grep imports/includes/FFI calls/API signatures — exact counts, not estimates). Document counts per boundary:
 
@@ -600,11 +588,9 @@ Count cross-boundary references mechanically (grep imports/includes/FFI calls/AP
 | **DEFAULT** | 3-4 cross-boundary call sites in 2+ modules; OR error contract differs between producer and consumer at boundary | Add intersection agent to DISCOVER and REVIEW |
 | **SKIP** | 1-2 cross-boundary call sites AND boundary bridged through a single well-understood mediator (e.g., standard library protocol layer, established framework convention) | Skip — justify in Boundary Analysis |
 
-**Test consumption of source APIs is always SKIP.** Tests import and exercise source code through standard test frameworks (pytest, JUnit, MSTest). The test quality specialist already reads source code as part of writing and assessing tests — this is a one-way consumer relationship, not a shared integration boundary where two active domains depend on each other's correctness. Do NOT add intersection agents for the Source×Test boundary; the test-automator already covers the seam. Cross-check this after boundary classification: if the only "boundary" is test files importing source code, mark it SKIP with exact call-site count.
+**Test consumption of source APIs is always SKIP.** Tests import and exercise source code through standard test frameworks (pytest, JUnit, MSTest). The test scope executor already reads source code as part of writing and assessing tests — this is a one-way consumer relationship, not a shared integration boundary where two active domains depend on each other's correctness. Do NOT add intersection agents for the Source×Test boundary; the executor covering the test scope already covers the seam. Cross-check this after boundary classification: if the only "boundary" is test files importing source code, mark it SKIP with exact call-site count.
 
-Select the best agent for each boundary from the INDEX. Suggested defaults:
-`backend-architect` (data flow, contract tracing); `security-reviewer` (crypto/auth
-boundaries). The planner's selection is authoritative — these are starting points.
+Each intersection agent is `executor-high`, research-baked (INJECT) with a boundary-integrity FOCUS report covering both sides' conventions + bridge semantics. The planner specifies the boundary FOCUS per boundary (data-flow/contract tracing, crypto/auth boundaries, format integrity, etc.) — the research row's angle follows the boundary's nature.
 
 SKIP boundaries require: "[Domain A] × [Domain B]: SKIP — [N] call sites, [reason]" (e.g., "SKIP: Crypto×Network — 2 call sites, bridged by MailCore2 TLS"). Do not use "multiple" or "moderate" — always report exact call-site counts.
 
@@ -613,9 +599,8 @@ every domain from Step 0's classification table has a discovery agent assigned i
 Stage 1. If you classified it as a separate domain, it needs its own agent and
 second opinion (at MEDIUM+ severity). The only valid exceptions: (a) the domain
 is explicitly deferred to a CONVERGE iteration with justification, or (b) the
-domain is marked for a later stage (e.g., test quality audit by test-automator,
-infrastructure review). Missing agents on classified domains are a protocol
-violation.
+domain is marked for a later stage (e.g., test quality audit in a later stage).
+Missing agents on classified domains are a protocol violation.
 
 ### Phase 5: Dependency Analysis
 
@@ -635,6 +620,8 @@ Write the plan to `tmp/glm-plan.md`. Include:
 
 1. **Project summary** — what the project is, key structure
 2. **External Reference Inventory** — a table of every external reference the codebase names by recognizable name or version (file formats, protocols, standards, algorithms, build targets). One row per named version (e.g., "LAS 1.2" and "LAS 3.0" are separate rows). Columns: reference name, where cited (file:line), research question, precision-criterion decision (PASS / SKIP + reason). The RESEARCH agent count equals the number of PASS rows. Do not merge versions into one row.
+2b. **Research Coverage Map** — the planning-time research manifest: every area any executor may need researched. Sources: External Reference Inventory PASS rows, codebase ecosystem (libraries, frameworks, versions in manifests), thin-context domains, planned s2 standpoints, planned intersection boundaries. Each row: `R-xx | topic | scope (files/domains/techs) | agent (web-searcher/research-analyst/data-researcher) | FOCUS angle`. Coverage rule: a domain is covered by ≥1 row if ANY executor's scope depends on facts outside the planner's context. SKIP rows documented one-line. s2 rows get complementary FOCUS angles (never the primary's); intersection rows get boundary-integrity angles. For planned CONVERGE iterations that may fire beyond the map, pre-declare candidate extension FOCUS angles.
+2c. **Routing Table** — agent → report IDs + tier (POINTER vs INJECT). Every RESEARCH-BAKED agent maps to exactly the reports covering its scope — nothing more (precision rule). PLAIN agents map to no reports (their research rides in the task file).
 3. **Task classification** — 5-axis assessment with justification for each axis
 4. **Workflow manifest** — ordered list of stages:
    ```
@@ -649,7 +636,7 @@ Write the plan to `tmp/glm-plan.md`. Include:
 
      Stage 1: [brick name] — [variant] — N agents
        Justification: [why this brick, why this variant]
-       Agent mapping: [specialist per domain split]
+       Agent mapping: [domain → executor-high, tier (PLAIN/POINTER/INJECT), routed report IDs, FOCUS angles]
        [Dependency batches if applicable]
    
      Stage 2: ...
