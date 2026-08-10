@@ -8,7 +8,7 @@
 # appends the lead's task file, and writes the complete prompt to tmp/.
 #
 # Usage:
-#   assemble-task.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT]
+#   assemble-task.sh -a AGENT -t TYPE -n NAME --task TASK_FILE [-o OUT] [--research-file RESEARCH_FILE]
 #
 # Arguments:
 #   -a, --agent       Agent name — reads <best-workflow folder>/agents/{agent}.md
@@ -16,6 +16,11 @@
 #   -n, --name        Agent instance name (e.g. s1-reviewer, s2i1-impl-auth)
 #   --task            Path to task assignment file (PROJECT, ENVIRONMENT,
 #                     PRIOR CONTEXT, YOUR TASK, WRITABLE FILES — lead-written)
+#   --research-file   Path to a research report — injected as the
+#                     `## RESEARCH DATA` section between template and task
+#                     (research-baked runs: s2, intersections, thin-context
+#                     primaries; omit for PLAIN runs where the task file's
+#                     context is the briefing)
 #   -o, --output      Override output path (default: tmp/{name}-prompt.txt)
 #
 # Task type → template selection:
@@ -27,11 +32,11 @@
 #   ASSEMBLED|name|output_path|bytes
 #
 # Examples:
-#   # Review — single task file (reviewers are read-only)
-#   assemble-task.sh -a code-reviewer -t review -n s1-reviewer --task tmp/task.txt
+#   # PLAIN — task file's context is the briefing
+#   assemble-task.sh -a executor-high -t review -n s1-discover --task tmp/s1-discover-task.txt
 #
-#   # Code implementation — writes directly to original files
-#   assemble-task.sh -a python-pro -t code -n s1-impl --task tmp/s1-impl-task.txt
+#   # Research-baked (INJECT) — template → RESEARCH DATA → task
+#   assemble-task.sh -a executor-high -t review -n s1-s2 --task tmp/s1-s2-task.txt --research-file tmp/research/R-02.md
 
 set -euo pipefail
 
@@ -45,8 +50,12 @@ REPO_ROOT="$PWD"
 AGENTS_DIR="$SCRIPT_DIR/../agents"
 TEMPLATES_DIR="$SCRIPT_DIR/../templates"
 
+# Escape & in REPO_ROOT so it is literal in sed replacements (valid dir chars
+# on macOS/Linux/Windows; & would otherwise corrupt s||| delimiters)
+REPO_ROOT_SED="${REPO_ROOT//&/\\&}"
+
 # ── Parse arguments ──
-AGENT="" TYPE="" NAME="" TASK_FILE="" OUTPUT=""
+AGENT="" TYPE="" NAME="" TASK_FILE="" OUTPUT="" RESEARCH_FILE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -54,6 +63,7 @@ while [[ $# -gt 0 ]]; do
     -t|--task-type) TYPE="$2";      shift 2 ;;
     -n|--name)      NAME="$2";      shift 2 ;;
     --task)         TASK_FILE="$2"; shift 2 ;;
+    --research-file) RESEARCH_FILE="$2"; shift 2 ;;
     -o|--output)    OUTPUT="$2";    shift 2 ;;
     -h|--help)      sed -n '2,/^$/p' "$0" | sed 's/^# \?//'; exit 0 ;;
     *) echo "ERROR: Unknown arg: $1" >&2; exit 1 ;;
@@ -88,6 +98,16 @@ AGENT_MD="$AGENTS_DIR/${AGENT}.md"
 [[ ! -s "$AGENT_MD" ]]   && { echo "ERROR: Agent file is empty: $AGENT_MD" >&2; exit 1; }
 [[ ! -f "$TASK_FILE" ]]  && { echo "ERROR: Task file not found: $TASK_FILE" >&2; exit 1; }
 [[ ! -s "$TASK_FILE" ]]  && { echo "ERROR: Task file is empty: $TASK_FILE" >&2; exit 1; }
+if [[ -n "$RESEARCH_FILE" ]]; then
+  [[ ! -f "$RESEARCH_FILE" ]] && { echo "ERROR: Research file not found: $RESEARCH_FILE" >&2; exit 1; }
+  [[ ! -s "$RESEARCH_FILE" ]] && { echo "ERROR: Research file is empty: $RESEARCH_FILE" >&2; exit 1; }
+  # Guard against double injection: the task file must NOT already contain a
+  # RESEARCH DATA section when --research-file is given.
+  if grep -qi '^## RESEARCH DATA' "$TASK_FILE"; then
+    echo "ERROR: Task file already contains a RESEARCH DATA section AND --research-file was given — double injection." >&2
+    exit 1
+  fi
+fi
 
 # ── Select templates based on task type ──
 INCLUDE_SEVERITY=false
@@ -149,7 +169,7 @@ mkdir -p "$OUT_DIR"
   cat "$QUALITY"
   printf '\n'
   # ── SEMI-STABLE (reused across calls using same agent type) ──
-  sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT}/tmp/,g" "$AGENT_MD"
+  sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT_SED}/tmp/,g" "$AGENT_MD"
   printf '\n'
   # ── VOLATILE SUFFIX (unique per agent instance) ──
   printf 'You are an AI agent named %s.\n\n' "$NAME"
@@ -158,16 +178,27 @@ mkdir -p "$OUT_DIR"
   printf 'All reports and output files go to: %s/tmp/\n' "$REPO_ROOT"
   printf '%s\n\n' 'The PROJECT directory (below) is for READING source files — do NOT write reports there.'
   printf '%s\n\n' '--- TASK ASSIGNMENT ---'
+  # Research-baked runs: inject the routed research report right after the
+  # template, before the task (structure: template → RESEARCH DATA → task).
+  if [[ -n "$RESEARCH_FILE" ]]; then
+    printf '%s\n' '## RESEARCH DATA (routed research report — your briefing)'
+    printf '%s\n\n' 'This is the research prepared for this task. It is your briefing: use it, do not redo the research. Shape your working form from it before starting the task. Your task''s PRIOR CONTEXT and MUST ANSWER take precedence over this section.'
+    cat "$RESEARCH_FILE"
+    printf '\n%s\n\n' '---'
+  fi
   # Substitute {NAME}, then strip standalone report-file paths the lead wrote
   # (only lines that are sole report paths — prose references like
   # "See s1-reviewer-report.md for context" are preserved).
-  # Resolve relative tmp/ references to absolute. The word-boundary equivalent
-  # (^|[^[:alnum:]_]) is pure POSIX ERE — it replaces GNU-only [[:<:]]
-  # (unsupported by MSYS/BSD sed). The , delimiter keeps the alternation |
-  # unescaped, so it is valid on GNU, BSD, and MSYS.
+  # Resolve relative tmp/ references to absolute. Idempotent: protect any
+  # pre-existing ${REPO_ROOT}/tmp/ so absolute paths are never double-prefixed.
+  # The word-boundary equivalent (^|[^[:alnum:]_]) is pure POSIX ERE — it
+  # replaces GNU-only [[:<:]] (unsupported by MSYS/BSD sed). The , delimiter
+  # keeps the alternation | unescaped, so it is valid on GNU, BSD, and MSYS.
   sed "s|{NAME}|${NAME}|g" "$TASK_FILE" \
     | sed -E '/^[[:space:]]*(-[[:space:]]*)?(tmp\/)?[a-zA-Z0-9_.-]+-report\.md[[:space:]]*$/d' \
-    | sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT}/tmp/,g"
+    | sed "s|${REPO_ROOT_SED}/tmp/|@REPO_TMP_PLACEHOLDER@|g" \
+    | sed -E "s,(^|[^[:alnum:]_])tmp/,\1${REPO_ROOT_SED}/tmp/,g" \
+    | sed "s|@REPO_TMP_PLACEHOLDER@|${REPO_ROOT_SED}/tmp/|g"
   printf '\n'
   # Auto-inject the WRITABLE FILES directive. For review/research types,
   # source files are read-only. For code type, source files from the task

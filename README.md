@@ -12,32 +12,22 @@ Original README.md below
 
 # Orchestration Workflow
 
-A parallel AI agent orchestrator for [OpenCode](https://opencode.ai). Instead of doing work itself, the lead decomposes your task, spawns specialist agents to do the actual work in parallel, verifies their output through an adversarial pipeline, and delivers production-ready results — all automatically. Works with any LLM provider.
+A parallel AI agent orchestrator for [OpenCode](https://opencode.ai). Instead of doing work itself, the lead decomposes your task, spawns agents to do the actual work in parallel, verifies their output through an adversarial pipeline, and delivers production-ready results — all automatically. Works with any LLM provider.
 
 ## Why use it
 
-A single agent working alone has one analytical lens. Two different specialists checking the same code find **structurally different issues** — testing across 5 language domains and 260+ agent configurations shows 87% complementarity between specialist pairs. This workflow gives every problem multiple independent perspectives:
+A single agent working alone has one analytical lens. This workflow gives every problem multiple independent perspectives:
 
-- **Parallel execution** — Up to 10 specialist agents work simultaneously on different parts of your task. Scales to what the task needs: no wasted agents, no under-staffed stages
+- **Parallel execution** — Up to 10 agents work simultaneously on different parts of your task. Scales to what the task needs: no wasted agents, no under-staffed stages
 - **Adversarial verification** — Before any finding becomes a fix, adversarial agents try to **falsify** it. They read full source context and search exhaustively at every level — function guards, caller validation, framework protections, type system invariants, test coverage. Only findings that survive become actionable fixes. This catches false positives a single agent would have "fixed" into a regression
-- **Iterative convergence** — The planner sets an iteration ceiling per stage (ONCE default, LOOP for highly ambiguous or production-critical work); whether an iteration actually fires is decided mechanically by the prior VERIFY synthesis grid (≥1 CONFIRMED HIGH/CRITICAL finding). Iterations use genuinely different specialists — no agent reappears, no role-swapping tricks. Each iteration gets its own full verify cycle
+- **Iterative convergence** — The planner sets an iteration ceiling per stage (ONCE default, LOOP for highly ambiguous or production-critical work); whether an iteration actually fires is decided mechanically by the prior VERIFY synthesis grid (≥1 CONFIRMED HIGH/CRITICAL finding). Iterations use genuinely different FOCUS standpoints — no angle repeats, no role-swapping tricks. Each iteration gets its own full verify cycle
 - **Smart scoping** — A three-agent planning pipeline researches the project, classifies the task on 5 axes (size, domains, ambiguity, severity, change type), then builds a custom workflow from available bricks. A cosmetic fix gets a handful of agents; a critical multi-domain refactor gets full adversarial verification with second opinions and cross-domain intersection audits
-- **External research** — When tasks touch unfamiliar technology, compliance requirements, or authoritative references outside the codebase, RESEARCH agents gather information first (web search, docs, standards). Research findings become PRIOR CONTEXT for discovery agents — the codebase audit knows what to look for
-- **Domain experts** — 112+ specialized agents, each with domain-specific checklists and anti-patterns. At MEDIUM+ severity, every discovery and review stage gets a second opinion from a **different** specialist — two independent analytical frameworks on the same code
+- **Comprehensive research stage** — A separate RESEARCH stage gathers external facts (standards, formats, versions, ecosystems, advisories) before execution. Reports are routed with precision: each agent receives exactly the research covering its scope — nothing unrelated
+- **Research-defined specialist identity** — No static personas. Specialist standpoint comes from the research stage's FOCUS angles. The generic executor (executor-high) handles every execution role; research agents (web-searcher, research-analyst, data-researcher) produce the knowledge. At MEDIUM+ severity, every discovery and post-implementation review stage gets a research-backed second opinion with a complementary FOCUS (post-fix review is primary-only by measurement)
 
-## Agent Quality — Real-Project Tested
+## The one general rule
 
-All agents have been tested and optimized through a rigorous methodology:
-
-**Method:** Each agent was tested in a 3-way comparison (original / polished / smart-applied) on real production codebases — not synthetic tasks.
-
-**Result:** The winning variant for each agent was selected based on objective criteria: finding accuracy, evidence quality, cross-file tracing depth, and zero false positives. Agents were compared head-to-head against OpenCode's own native subagents — **our agents won every comparison.**
-
-**Cognitive Mode Tags:** Each agent in the INDEX carries a Mode tag (TRACE / SWEEP / KNOW) from these tests, indicating which cognitive approach it's best at:
-
-- **TRACE** — best at following data/logic/flow through code (bug hunting, pipeline analysis)
-- **SWEEP** — best at systematic checklist verification (security audits, idiom reviews)
-- **KNOW** — best at applying deep domain/framework expertise (.NET, Spring, Django)
+> **Every agent should have research data.** If the data is already gathered and covers everything the agent needs, run PLAIN and pass the already-present data with the task. Research is injected only when the task depends on facts the file does not carry.
 
 ## Quick Start
 
@@ -57,47 +47,52 @@ You ask: "Add dark mode" or "Fix the payment race condition"
          │
          ▼
     Planning     Three-agent pipeline: agentic-planner researches
-    Pipeline     the codebase and builds a custom workflow manifest;
-         │       volume-splitter resolves file scopes to exact paths
-         │       with line counts and applies split/merge rules;
-         │       agent-organizer reviews structural compliance and
-         │       fixes mechanical gaps — all before stage agents spawn
+    Pipeline     the codebase and builds a custom workflow manifest
+         │       (Research Coverage Map + Routing Table + per-agent
+         │       tiers); volume-splitter resolves file scopes to
+         │       exact paths with line counts; agent-organizer
+         │       reviews structural compliance and routing precision
          ▼
-   [Research?]   For tasks touching anything outside the codebase —
-         │       external standards, compliance, unfamiliar tech —
-         │       RESEARCH agents gather information first. Their
-         │       findings become PRIOR CONTEXT for discovery.
+    Research     Comprehensive external-fact research (standards,
+         │       formats, versions, ecosystems, advisories) per the
+         │       coverage map. Reports carry Report Scope + FOCUS
+         │       angle + confidence tiers + Discovery Questions
          ▼
-    Discovery    Specialist agents audit existing code. At MEDIUM+
-         │       severity, a second opinion runs in parallel with
-         │       a different specialist. For multi-domain tasks,
-         │       intersection agents trace cross-boundary flows
-         │       for gaps neither domain specialist would catch
+    Discovery    Executor-high agents audit existing code (PLAIN —
+         │       planner context is the research). At MEDIUM+
+         │       severity, a research-backed second opinion runs in
+         │       parallel with a complementary FOCUS. Intersection
+         │       agents trace cross-boundary flows with boundary-
+         │       integrity research
          ▼
-   Verification  Extraction deduplicates findings and tags confidence
-         │       signals (both-found, boundary-found). Adversarial
-         │       agents (1:1 for CRITICAL, 1 per 3 for HIGH,
-         │       1 per 8 for MEDIUM)
-         │       try to falsify every finding — reading full source
-         │       context, searching for guards, types, tests. Only
-         │       survivors become actionable fixes
+   Verification  Extraction deduplicates findings, tags confidence
+         │       signals (both-found, boundary-found), and routes
+         │       investigated-and-rejected items for re-examination.
+         │       Adversarial agents (1:1 for CRITICAL, 1 per 3 for
+         │       HIGH, 1 per 8 for MEDIUM) try to falsify every
+         │       finding — reading full source context, searching
+         │       for guards, types, tests. Only survivors become
+         │       actionable fixes
          ▼
    [Converge?]   Fires only when the prior VERIFY grid contains
          │       ≥1 CONFIRMED HIGH/CRITICAL finding (mechanical).
-         │       Iterations use genuinely different specialists;
+         │       Iterations use genuinely different FOCUS angles
+         │       (fresh research generated when the map runs out);
          │       converged when the grid shows no CONFIRMED HIGH+
          ▼
-  Implementation Domain specialists write the code. Reviewed by
-         │       code-reviewer + second opinion at MEDIUM+.
-         │       Cross-domain reviewers check integration points
+  Implementation Executor-high agents write the code. Reviewed by
+         │       executor-high + research-backed second opinion at
+         │       MEDIUM+. Cross-domain reviewers check integration
+         │       points
          ▼
-      Fixes      All confirmed findings applied mechanically
-         │       by domain specialists, then independently
-         │       reviewed. If reviews find MEDIUM+ issues →
+      Fixes      All confirmed findings applied mechanically by
+         │       executor-high agents, verified by a build-gate,
+         │       then independently reviewed (primary-only). If
+         │       reviews find MEDIUM+ issues →
          │       fix again until clean
          ▼
-      Test       Build + test suite. Failures fixed. 100%
-         │       working code verified.
+      Test       Build + test suite + runtime smoke gate. Failures
+         │       fixed. 100% working code verified.
          ▼
    Deliverable   Clean commits, passing tests, verified code
 ```
@@ -108,15 +103,17 @@ Everything runs autonomously — the lead coordinates, agents do the work, verif
 
 **Lead** — The orchestrator. It doesn't write code. It researches your task, picks the right agents, writes their prompts, spawns them, and routes their findings through verification. The lead never edits project source code.
 
-**Planning pipeline** — Before any stage agents run, a three-agent pipeline (agentic-planner + volume-splitter + agent-organizer) researches the codebase, classifies the task on 5 axes, selects workflow bricks, splits domains by specialist and volume, and produces a verified plan with exact file paths and agent assignments. No bad plan reaches the execution phase.
+**Planning pipeline** — Before any stage agents run, a three-agent pipeline (agentic-planner + volume-splitter + agent-organizer) researches the codebase, classifies the task on 5 axes, selects workflow bricks, splits domains by language/framework and volume, builds the Research Coverage Map + Routing Table, and produces a verified plan with exact file paths, per-agent tiers, and FOCUS angles. No bad plan reaches the execution phase.
 
-**Agents** — Specialist AI workers. Each one gets a narrow, well-defined task with a specific persona (`swift-pro`, `code-reviewer`, `security-reviewer`). They work independently and write structured reports. At MEDIUM+ severity, every discovery and review stage gets a second opinion — a different specialist checking the same code through a different analytical framework (proven 87% complementarity).
+**Agents** — 9 agents: 8 workflow-internal roles (planning, verification, research) + the generic executor. No static specialist personas — specialist identity comes from the research stage's FOCUS angles. Executor-high handles every execution role; research agents produce the knowledge; verification agents gate the findings. At MEDIUM+ severity, every discovery and post-implementation review stage gets a research-backed second opinion with a complementary FOCUS. Post-fix review is primary-only by measurement.
 
-**RESEARCH brick** — Gathers information beyond what the codebase provides: web search, documentation, standards, community knowledge, git history, or deep codebase exploration. Placed before DISCOVER when research findings inform what to look for in code. Research agents scale by topic specialization, not second opinions. Findings carry confidence tiers (CONFIRMED/LIKELY/TENTATIVE/SPECULATIVE) that propagate through PRIOR CONTEXT and delivery. VERIFY is skipped for purely informational findings; runs when findings include code-level references.
+**RESEARCH brick** — Gathers EXTERNAL facts beyond what the codebase provides: web search, documentation, standards, community knowledge, datasets. Internal codebase facts are executor work — executors read code themselves. The planner's Research Coverage Map ensures every area any executor may need is covered; the Routing Table gives each agent exactly the reports covering its scope (precision rule — unrelated data degrades results). Reports carry Report Scope (routing key), FOCUS angle, findings with confidence tiers (CONFIRMED/LIKELY/TENTATIVE/SPECULATIVE), provisional traps, and Discovery Questions. VERIFY is skipped for purely informational findings; runs when findings include code-level references.
 
-**Verification** — Before any finding becomes a fix, it goes through adversarial checking. An extraction agent deduplicates findings and tags them with confidence signals (both-found, boundary-found). Severity-routed adversarial agents then try to falsify each one: 1:1 for CRITICAL findings, 1 per batch of 3 for HIGH findings, 1 per batch of 8 for MEDIUM findings. Each agent reads full source context (minimum 30 lines) and exhaustively searches for counter-evidence at every level — function guards, caller validation, framework protections, type system invariants, test coverage. Only findings that survive become fixes.
+**Tiers** — PLAIN (the task file already carries the research — planner context, contracts, specs; pass it through), POINTER (report path + Discovery Questions for external-fact primaries), INJECT (full report as RESEARCH DATA for s2, intersections, thin-context primaries).
 
-**Convergence** — The planner sets an iteration ceiling per stage (ONCE: at most one extra iteration, the default; LOOP: up to 3 for highly ambiguous or production-critical work). Firing is mechanical, never a lead judgment call: an iteration fires only when the prior VERIFY synthesis grid contains at least one CONFIRMED HIGH/CRITICAL finding (adversarially verified). REJECTED or WEAKENED findings never trigger. Each pass uses genuinely different specialists — no agent reappears, no role-swapping. Each iteration gets its own full verify stage before the next iteration spawns. A stage with zero CONFIRMED HIGH+ in its grid is converged after one pass.
+**Verification** — Before any finding becomes a fix, it goes through adversarial checking. An extraction agent deduplicates findings, tags them with confidence signals (both-found, boundary-found), and routes each report's investigated-and-rejected items into the adversarial batches for re-examination. Severity-routed adversarial agents then try to falsify each one: 1:1 for CRITICAL findings, 1 per batch of 3 for HIGH findings, 1 per batch of 8 for MEDIUM findings. Each agent reads full source context (minimum 30 lines) and exhaustively searches for counter-evidence at every level — function guards, caller validation, framework protections, type system invariants, test coverage. Only findings that survive become fixes.
+
+**Convergence** — The planner sets an iteration ceiling per stage (ONCE: at most one extra iteration, the default; LOOP: up to 3 for highly ambiguous or production-critical work). Firing is mechanical, never a lead judgment call: an iteration fires only when the prior VERIFY synthesis grid contains at least one CONFIRMED HIGH/CRITICAL finding (adversarially verified). REJECTED or WEAKENED findings never trigger. Each pass uses genuinely different FOCUS angles — no angle repeats, no role-swapping. When the pre-baked research map runs out, fresh research is generated per angle (bounded by the ceiling). Each iteration gets its own full verify stage before the next iteration spawns. A stage with zero CONFIRMED HIGH+ in its grid is converged after one pass.
 
 **Dynamic workflow** — No fixed pipeline. The planner classifies your task on 5 axes (size, domain breadth, ambiguity, severity, change type) and assembles a custom stage plan from a brick catalog (RESEARCH/DISCOVER/IMPLEMENT/REVIEW/VERIFY/CONVERGE/FIX/TEST). A cosmetic text change skips discovery and research. A critical security fix gets full adversarial verification with research on CVE context and multiple discovery passes.
 
