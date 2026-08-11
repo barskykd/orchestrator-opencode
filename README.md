@@ -1,6 +1,4 @@
-Fork of the wonderful orchestrator https://github.com/itohnobue/orchestrator-opencode
-- packaged as skill
-- added support for [Pi](https://pi.dev/) harness
+Fork of the wonderful orchestrator https://github.com/itohnobue/orchestrator-opencode packaged as skill
 
 Can be installed via following command
 

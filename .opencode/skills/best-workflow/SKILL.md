@@ -3,13 +3,7 @@ name: best-workflow
 description: Use only then explicitly asked.
 ---
 
-# Project-Specific — orchestrator-opencode
-
-## Shared Workflow Infrastructure
-
-The sections below are identical across all repositories that use this workflow system. When propagating to other repos, copy from here to end of file.
-
----
+# Project-Specific
 
 ## Temporary Files
 
@@ -248,7 +242,7 @@ The lead is an **autonomous orchestrator**, not a developer doing hands-on work.
 - **Failure:** You did any implementation work an agent should have done (writing, editing, or modifying code). You read raw domain data that would have been better isolated in an agent's context. You produced analysis without verification. You skipped, shortened, or altered mandated work.
 
 **Context is not the lead's concern (MANDATORY — read this before everything):**
-- Your context window is a platform resource managed by opencode (auto-compaction). It is not your problem to budget, conserve, or worry about. You never manage context.
+- Your context window is a platform resource managed by harness (auto-compaction). It is not your problem to budget, conserve, or worry about. You never manage context.
 - The workflow is designed so the platform's compaction safely compresses your context mid-run, and the checkpoint + continuation protocol restores full state — you (or a replacement lead) resume exactly where you left off. Running low on context is impossible to lose work over.
 - Therefore, context pressure NEVER justifies deviation. There is no circumstance under which you skip, shorten, reduce, merge, or hand-construct work because of context. Not to save tokens, not to "finish faster," not to avoid overflow. If context runs low, the platform compacts and you continue — you do nothing special, and you never change the work.
 - Any reasoning that includes "to save context", "context budget", "context-efficient", "to avoid reading X", or "this is too many agents" is a deviation trigger — you must NOT act on it. The correct action is exactly what the workflow says, unchanged.
@@ -1095,8 +1089,6 @@ Describe problems and desired behavior — do NOT paste exact fix code unless pr
 
 #### Agent Spawning
 
-All agents use the opencode default model. The `-m` flag is available to override when a specific model is needed but is never required.
-
 **How it works for review/research/audit stages:**
 1. A single agent gets the agent `.md` and the task assignment — it works independently
 2. When a stage has independent subtasks (different files, modules, concerns), spawn one agent per subtask in parallel — as many as the task naturally decomposes into, maximum 10 agents
@@ -1357,7 +1349,7 @@ After final stage:
 - **Code changes:** spawn a single agent (executor-high, default model) to run build + tests, fix all failures, and deliver production-ready result. This is the final production gate.
 - **Research/analysis:** synthesize into clear summary, preserving the research agent's confidence tier for each key finding. Do not present research findings as established facts unless they are CONFIRMED (≥2 independent sources); for LIKELY, TENTATIVE, or SPECULATIVE findings, state the tier explicitly in the delivery.
 - Write `tmp/session-summary.md`: task goal, stages executed, total agents, agent aborts/failures, iterations per iterative stage, verification stats, key decisions, phase durations (planning, preparation, execution/wait, verification, synthesis)
-- **Knowledge harvesting:** If any synthesis grid contains CONFIRMED findings, spawn a single `verification-analyst` agent (default model). It reads all synthesis grids and discovery reports, classifies each CONFIRMED finding as PATTERN (the lesson generalizes beyond this fix) or INCIDENT (one-off specific fix), deduplicates against existing `knowledge.md` entries via `memory.sh search`, and for each PATTERN writes a `memory.sh add` entry (category: `gotcha` or `pattern`, tagged by domain — `numerical`, `concurrency`, `memory`, `ffi`, `io`). For each PATTERN entry, also add a one-line prevention recommendation: (a) mechanically preventable → implement enforcement (CI test, lint rule, type-level, shared base class); (b) review-only → gotcha + lint rule; (c) neither → accept recurrence and budget for it in future checks. For each existing knowledge entry found by search, evaluate whether the current run's fix supersedes it: if yes, update or delete via `memory.sh`; if the entry references code not addressed by current findings, leave it untouched. Conservative: prefer silence over noise; never delete without clear evidence. The agent's report is written to `tmp/knowledge-harvest-report.md`. After the harvester completes, commit and push `knowledge.md` from the orchestrator's root (where `.opencode/` lives — the same `$REPO_ROOT` that `tmp/` paths resolve to) so harvested patterns survive the session. Skip the commit if `knowledge.md` is unchanged (all findings were INCIDENT with no knowledge updates).
+- **Knowledge harvesting:** If any synthesis grid contains CONFIRMED findings, spawn a single `verification-analyst` agent (default model). It reads all synthesis grids and discovery reports, classifies each CONFIRMED finding as PATTERN (the lesson generalizes beyond this fix) or INCIDENT (one-off specific fix), deduplicates against existing `knowledge.md` entries via `memory.sh search`, and for each PATTERN writes a `memory.sh add` entry (category: `gotcha` or `pattern`, tagged by domain — `numerical`, `concurrency`, `memory`, `ffi`, `io`). For each PATTERN entry, also add a one-line prevention recommendation: (a) mechanically preventable → implement enforcement (CI test, lint rule, type-level, shared base class); (b) review-only → gotcha + lint rule; (c) neither → accept recurrence and budget for it in future checks. For each existing knowledge entry found by search, evaluate whether the current run's fix supersedes it: if yes, update or delete via `memory.sh`; if the entry references code not addressed by current findings, leave it untouched. Conservative: prefer silence over noise; never delete without clear evidence. The agent's report is written to `tmp/knowledge-harvest-report.md`. After the harvester completes, commit `knowledge.md` so harvested patterns survive the session. Skip the commit if `knowledge.md` is unchanged (all findings were INCIDENT with no knowledge updates).
 - Cleanup: `rm -f tmp/s[0-9]*-prompt.txt tmp/s[0-9]*-task.txt`. Keep logs, reports, summary, knowledge-harvest-report
 
 ### Agent Prompt Template
@@ -1484,8 +1476,6 @@ For tasks exceeding a single session:
 | Stage partially failed (1+ agents produced no useful output or wrong output) | Diagnose root causes across all failed agents. Fix issues (environment, prompts, tasks). Re-spawn ALL failed agents. The stage is incomplete until all agents succeed. Do NOT proceed to the next stage with gaps. |
 | Iteration cap hit without convergence | Synthesize all iterations, note "convergence not reached" in delivery, proceed |
 | Adversarial verification produces suspicious results (CONFIRMED on obviously-wrong findings or REJECTED with weak evidence) | Diagnose prompt/task quality — adversarial agent may have misunderstood its role. Adjust MUST ANSWER questions or adversarial instructions and respawn. |
-
-**Deepseek-flash output-budget failure (CLI runs):** high-reasoning agents can burn the entire output budget on heavy reviews (`reason: length`, 0 output). Fix for CLI runs (`opencode run`): `OPENCODE_CONFIG` with `{ "provider": { "deepseek": { "options": { "max_tokens": 65536 } } } }`. TUI sessions unaffected.
 
 ### Rules
 
